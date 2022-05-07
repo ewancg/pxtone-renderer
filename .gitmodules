@@ -1,0 +1,3 @@
+[submodule "jsxm"]
+	path = external/jsxm
+	url = https://github.com/ewangreen4/jsxm
