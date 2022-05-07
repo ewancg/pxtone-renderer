@@ -33,7 +33,7 @@ enum pxtnWOICETYPE
 	pxtnWOICE_PCM ,
 	pxtnWOICE_PTV ,
 	pxtnWOICE_PTN ,
-	pxtnWOICE_OGGV,
+	pxtnWOICE_OGGV
 };
 
 enum pxtnVOICETYPE
@@ -42,7 +42,7 @@ enum pxtnVOICETYPE
 	pxtnVOICE_Overtone ,
 	pxtnVOICE_Noise    ,
 	pxtnVOICE_Sampling ,
-	pxtnVOICE_OggVorbis,
+	pxtnVOICE_OggVorbis
 };
 
 typedef struct
@@ -118,8 +118,8 @@ pxtnVOICETONE;
 class pxtnWoice
 {
 private:
-	void operator = (const pxtnWoice& src){}
-	pxtnWoice       (const pxtnWoice& src){}
+	void operator = (const pxtnWoice& src);
+	pxtnWoice       (const pxtnWoice& src);
 
 	int32_t            _voice_num;
 

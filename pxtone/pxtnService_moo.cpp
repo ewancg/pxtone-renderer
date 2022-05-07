@@ -31,7 +31,7 @@ bool pxtnService::_moo_release()
 	if( !_moo_b_init ) return false;
 	_moo_b_init = false;
 	SAFE_DELETE( _moo_freq );
-	if( _moo_group_smps ) free( _moo_group_smps ); _moo_group_smps = NULL;
+	if( _moo_group_smps ){ free( _moo_group_smps ); _moo_group_smps = NULL; }
 	return true;
 }
 
@@ -187,7 +187,19 @@ bool pxtnService::_moo_PXTONE_SAMPLE( void *p_data )
 		case EVENTKIND_LAST      : break;
 		case EVENTKIND_VOICENO   : _moo_ResetVoiceOn   ( p_u, _moo_p_eve->value            ); break;
 		case EVENTKIND_GROUPNO   : p_u->Tone_GroupNo   (              _moo_p_eve->value    ); break;
-		case EVENTKIND_TUNING    : p_u->Tone_Tuning    ( *( (float*)(&_moo_p_eve->value) ) ); break;
+		case EVENTKIND_TUNING    : 
+			{
+				union
+				{
+					float f;
+					int32_t i;
+				} value;
+
+				value.i = _moo_p_eve->value;
+
+				p_u->Tone_Tuning( value.f );
+				break;
+			}
 		}
 	}
 
@@ -420,17 +432,15 @@ bool pxtnService::moo_set_master_volume( float v )
 // 
 ////////////////////
 
-bool pxtnService::Moo( void* p_buf, int32_t  size )
+int32_t pxtnService::Moo( void* p_buf, int32_t  size )
 {
-	if( !_moo_b_init       ) return false;
-	if( !_moo_b_valid_data ) return false;
-	if(  _moo_b_end_vomit  ) return false;
-
-	bool b_ret = false;
+	if( !_moo_b_init       ) return 0;
+	if( !_moo_b_valid_data ) return 0;
+	if(  _moo_b_end_vomit  ) return 0;
 
 	int32_t  smp_w = 0;
 
-	if( size % _dst_byte_per_smp ) return false;
+	if( size % _dst_byte_per_smp ) return 0;
 
 	int32_t  smp_num = size / _dst_byte_per_smp;
 
@@ -443,21 +453,15 @@ bool pxtnService::Moo( void* p_buf, int32_t  size )
 			if( !_moo_PXTONE_SAMPLE( sample ) ){ _moo_b_end_vomit = true; break; }
 			for( int ch = 0; ch < _dst_ch_num; ch++, p16++ ) *p16 = sample[ ch ];
 		}
-		for( ;          smp_w < smp_num; smp_w++ )
-		{
-			for( int ch = 0; ch < _dst_ch_num; ch++, p16++ ) *p16 = 0;
-		}
 	}
 
 	if( _sampled_proc )
 	{
-		int32_t clock = (int32_t)( _moo_smp_count / _moo_clock_rate );
-		if( !_sampled_proc( _sampled_user, this ) ){ _moo_b_end_vomit = true; goto term; }
+		//int32_t clock = (int32_t)( _moo_smp_count / _moo_clock_rate );
+		if( !_sampled_proc( _sampled_user, this ) ){ _moo_b_end_vomit = true; }
 	}
 
-	b_ret = true;
-term:
-	return b_ret;
+	return smp_w;
 }
 
 int32_t pxtnService_moo_CalcSampleNum( int32_t meas_num, int32_t beat_num, int32_t sps, float beat_tempo )

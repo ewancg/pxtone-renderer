@@ -42,8 +42,8 @@ typedef bool (* pxtnSampledCallback)( void* user, const pxtnService* pxtn );
 class pxtnService
 {
 private:
-	void operator = (const pxtnService& src){}
-	pxtnService     (const pxtnService& src){}
+	void operator = (const pxtnService& src);
+	pxtnService     (const pxtnService& src);
 
 	enum _enum_FMTVER
 	{
@@ -52,7 +52,7 @@ private:
 		_enum_FMTVER_x2x, // no version of exe
 		_enum_FMTVER_x3x, // unit has voice / basic-key for only view
 		_enum_FMTVER_x4x, // unit has event
-		_enum_FMTVER_v5 ,
+		_enum_FMTVER_v5
 	};
 	
 	bool _b_init;
@@ -238,7 +238,7 @@ public :
 
 	bool    moo_preparation( const pxtnVOMITPREPARATION *p_build );
 
-	bool    Moo( void* p_buf, int32_t size );
+	int32_t Moo( void* p_buf, int32_t size );
 };
 
 int32_t pxtnService_moo_CalcSampleNum( int32_t meas_num, int32_t beat_num, int32_t sps, float beat_tempo );

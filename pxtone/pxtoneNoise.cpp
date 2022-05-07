@@ -16,13 +16,13 @@ pxtoneNoise::pxtoneNoise()
 
 pxtoneNoise::~pxtoneNoise()
 {
-	if( _bldr ) delete (pxtnPulse_NoiseBuilder*)_bldr; _bldr = NULL;
+	if( _bldr ){delete (pxtnPulse_NoiseBuilder*)_bldr; _bldr = NULL; }
 }
 
 bool pxtoneNoise::init()
 {
 	pxtnPulse_NoiseBuilder *bldr = new pxtnPulse_NoiseBuilder();	
-	if( !bldr->Init() ){ free( bldr ); return false; }	
+	if( !bldr->Init() ){ delete( bldr ); return false; }
 	_bldr = bldr;
 	return true;
 }
@@ -51,7 +51,7 @@ bool pxtoneNoise::quality_set( int32_t ch_num, int32_t sps, int32_t bps )
 	_bps    = bps   ;
 	_sps    = sps   ;
 
-	return false;
+	return true;
 }
 
 void pxtoneNoise::quality_get( int32_t *p_ch_num, int32_t *p_sps, int32_t *p_bps ) const

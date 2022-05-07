@@ -142,9 +142,14 @@ static int32_t _DefaultKindValue( uint8_t kind )
 	case EVENTKIND_GROUPNO   : return EVENTDEFAULT_GROUPNO  ;
 	case EVENTKIND_TUNING    :
 		{
-			float tuning;
-			tuning = EVENTDEFAULT_TUNING;
-			return *( (int32_t*)&tuning );
+			union
+			{
+				float f;
+				int32_t i;
+			} tuning;
+
+			tuning.f = EVENTDEFAULT_TUNING;
+			return tuning.i;
 		}
 	case EVENTKIND_PAN_TIME  : return EVENTDEFAULT_PAN_TIME ;
 	}
@@ -223,8 +228,14 @@ void pxtnEvelist::_rec_cut( EVERECORD* p_rec )
 
 bool pxtnEvelist::Record_Add_f( int32_t clock, uint8_t unit_no, uint8_t kind, float value_f )
 {
-	int32_t value = *( (int32_t*)(&value_f) );
-	return Record_Add_i( clock, unit_no, kind, value );
+	union
+	{
+		float f;
+		int32_t i;
+	} value;
+
+	value.f = value_f;
+	return Record_Add_i( clock, unit_no, kind, value.i );
 }
 
 bool pxtnEvelist::Record_Add_i( int32_t clock, uint8_t unit_no, uint8_t kind, int32_t value )
@@ -625,8 +636,14 @@ void pxtnEvelist::Linear_Add_i(  int32_t clock, uint8_t unit_no, uint8_t kind, i
 
 void pxtnEvelist::Linear_Add_f( int32_t clock, uint8_t unit_no, uint8_t kind, float value_f )
 {
-	int32_t value = *( (int32_t*)(&value_f) );
-	Linear_Add_i( clock, unit_no, kind, value );
+	union
+	{
+		float f;
+		int32_t i;
+	} value;
+
+	value.f = value_f;
+	Linear_Add_i( clock, unit_no, kind, value.i );
 }
 
 void pxtnEvelist::Linear_End( bool b_connect )
@@ -724,21 +741,21 @@ bool pxtnEvelist::io_Write( pxtnDescriptor *p_doc, int32_t rough ) const
 
 	for( const EVERECORD* p = get_Records(); p; p = p->next )
 	{
-		clock    = p->clock - absolute;
+		//clock    = p->clock - absolute; // Unused
 
 		ralatived_size += pxtnDescriptor_v_chk( p->clock );
 		ralatived_size += 1;
 		ralatived_size += 1;
 		ralatived_size += pxtnDescriptor_v_chk( p->value );
 
-		absolute = p->clock;
+		//absolute = p->clock; // Unused
 	}
 
 	int32_t size = sizeof(int32_t) + ralatived_size;
 	if( !p_doc->w_asfile( &size   , sizeof(int32_t), 1 ) ) return false;
 	if( !p_doc->w_asfile( &eve_num, sizeof(int32_t), 1 ) ) return false;
 
-	absolute = 0;
+	// absolute = 0; // Redundant
 
 	for( const EVERECORD* p = get_Records(); p; p = p->next )
 	{
@@ -828,7 +845,7 @@ _x4x_EVENTSTRUCT;
 // write event.
 pxtnERR pxtnEvelist::io_Unit_Read_x4x_EVENT( pxtnDescriptor *p_doc, bool bTailAbsolute, bool bCheckRRR )
 {
-	_x4x_EVENTSTRUCT evnt     ={0};
+	_x4x_EVENTSTRUCT evnt     = _x4x_EVENTSTRUCT();
 	int32_t          clock    = 0;
 	int32_t          value    = 0;
 	int32_t          absolute = 0;
@@ -852,7 +869,7 @@ pxtnERR pxtnEvelist::io_Unit_Read_x4x_EVENT( pxtnDescriptor *p_doc, bool bTailAb
 		x4x_Read_Add( clock, (uint8_t)evnt.unit_index, (uint8_t)evnt.event_kind, value );
 		if( bTailAbsolute && Evelist_Kind_IsTail( evnt.event_kind ) ) absolute += value;
 	}
-	if( e != evnt.event_num ) return pxtnERR_desc_broken;
+	if( e != (int32_t)evnt.event_num ) return pxtnERR_desc_broken;
 
 	x4x_Read_NewKind();
 
@@ -863,7 +880,7 @@ pxtnERR pxtnEvelist::io_Read_x4x_EventNum( pxtnDescriptor *p_doc, int32_t* p_num
 {
 	if( !p_doc || !p_num ) return pxtnERR_param;
 
-	_x4x_EVENTSTRUCT evnt = {0};
+	_x4x_EVENTSTRUCT evnt = _x4x_EVENTSTRUCT();
 	int32_t          work =  0 ;
 	int32_t          e    =  0 ;
 	int32_t          size =  0 ;
@@ -879,7 +896,7 @@ pxtnERR pxtnEvelist::io_Read_x4x_EventNum( pxtnDescriptor *p_doc, int32_t* p_num
 		if( !p_doc->v_r( &work ) ) break;
 		if( !p_doc->v_r( &work ) ) break;
 	}
-	if( e != evnt.event_num ) return pxtnERR_desc_broken;
+	if( e != (int32_t)evnt.event_num ) return pxtnERR_desc_broken;
 
 	*p_num = evnt.event_num;
 

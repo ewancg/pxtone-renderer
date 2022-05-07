@@ -25,7 +25,7 @@ enum
 	EVENTKIND_TUNING    ,// 14
 	EVENTKIND_PAN_TIME  ,// 15
 
-	EVENTKIND_NUM       ,// 16
+	EVENTKIND_NUM        // 16
 };
 
 #define EVENTDEFAULT_VOLUME       104
@@ -63,8 +63,8 @@ class pxtnEvelist
 
 private:
 
-	pxtnEvelist(              const pxtnEvelist &src  ){               } // copy
-	pxtnEvelist & operator = (const pxtnEvelist &right){ return *this; } // substitution
+	pxtnEvelist(              const pxtnEvelist &src  );                 // copy
+	pxtnEvelist & operator = (const pxtnEvelist &right){ (void)right; return *this; } // substitution
 
 	int32_t    _eve_allocated_num;
 	EVERECORD* _eves     ;
