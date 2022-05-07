@@ -5,6 +5,8 @@ project(pxtone-renderer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_CXX_FLAGS "-DpxINCLUDE_OGGVORBIS")
+
 add_executable(pxtone-renderer
     main.cpp
     global.h
@@ -54,3 +56,7 @@ add_executable(pxtone-renderer
     pxtone/pxtoneNoise.cpp
     pxtone/pxtoneNoise.h
 )
+
+target_link_libraries(pxtone-renderer m)
+add_subdirectory(ogg)
+add_subdirectory(vorbis)

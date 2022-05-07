@@ -7,8 +7,10 @@
 
 #include "encoder.h"
 #include "global.h"
+#include "ogg/ogg.h"
 #include "pxtone/pxtn.h"
 #include "pxtone/pxtnService.h"
+#include "vorbis/vorbisenc.h"
 
 typedef std::pair<std::string, std::string> Arg;
 struct KnownArg {
