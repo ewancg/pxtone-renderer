@@ -4,6 +4,7 @@
 #include <string>
 
 #include "pxtone/pxtnError.h"
+#include "vorbis/vorbisenc.h"
 
 #define SAMPLE_RATE 48000
 #define CHANNEL_COUNT 2
