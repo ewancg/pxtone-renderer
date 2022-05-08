@@ -15,7 +15,7 @@
 // clang-format off
 static const char *usage =
     "Usage: pxtone-decoder [options] file(s)...\n"
-    "By default, the provided files will be rendered as a .OGG to a file of the same name.\n"
+    "By default, the provided files will be rendered as a .WAV to a file of the same name.\n"
     "Options:\n"
     "  -f, --format <OGG:WAV:FLAC>  Encode data to this format.\n"
     "  -h, --help                   Show this dialog.\n"
@@ -37,8 +37,13 @@ struct GetError {
 };
 
 struct Config {
-  enum Format : unsigned char { OGG, WAV, FLAC };
+  enum Format {
+    OGG = SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+    WAV = SF_FORMAT_WAV | SF_FORMAT_PCM_16,
+    FLAC = SF_FORMAT_FLAC | SF_FORMAT_PCM_16
+  };
   Format format = OGG;
+  std::string formatSuffix = "wav";
   double fadeOutTime = 0;
   bool multipleFiles = false;
   bool toStdout = false;
@@ -158,14 +163,18 @@ bool parseArguments(const std::vector<std::string> &args) {
     else {
       auto str = formatFound->second;
       std::transform(str.begin(), str.end(), str.begin(),
-                     [](unsigned char c) { return std::toupper(c); });
-      str == "OGG"   ? config.format = Config::OGG
-      : str == "WAV" ? config.format = Config::WAV
-      : str == "FLAC"
-          ? config.format = Config::WAV
-          : logToConsole("Unknown format type '" + formatFound->second +
-                             "'; Resorting to OGG",
-                         LogState::Warning);
+                     [](unsigned char c) { return std::tolower(c); });
+      auto setFormat = [](Config::Format format, const char *suffix) {
+        config.format = format;
+        config.formatSuffix = suffix;
+      };
+      str == "ogg"   ? setFormat(Config::OGG, "ogg")
+      : str == "wav" ? setFormat(Config::WAV, "wav")
+      : str == "flac"
+          ? setFormat(Config::FLAC, "flac")
+          : void(logToConsole("Unknown format type '" + formatFound->second +
+                                  "'; Resorting to .wav",
+                              LogState::Warning));
     }
   }
   return true;
@@ -214,27 +223,25 @@ void decode(std::filesystem::path file) {
   if (!pxtn->moo_preparation(&prep))
     throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
-  logToConsole("Successfully opened file " + file.filename().string() + ", " +
-                   std::to_string(size) + " bytes read.",
-               LogState::Info);
+  //  logToConsole("Successfully opened file " + file.filename().string() + ", "
+  //  +
+  //                   std::to_string(size) + " bytes read.",
+  //               LogState::Info);
 
   SF_INFO info;
   info.samplerate = SAMPLE_RATE;
   info.channels = CHANNEL_COUNT;
-  info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-
-  //  info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS; // does not yet work
-
-  //  info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_16; // also does not yet work
+  info.format = config.format;
 
   if (!sf_format_check(&info))
     throw GetError::encoder("Invalid encoder format.");
 
-  SNDFILE *pcmFile = sf_open(
-      std::filesystem::absolute(file.replace_extension(".wav").filename())
-          .string()
-          .c_str(),
-      SFM_WRITE, &info);
+  SNDFILE *pcmFile =
+      sf_open(std::filesystem::absolute(
+                  file.replace_extension(config.formatSuffix).filename())
+                  .string()
+                  .c_str(),
+              SFM_WRITE, &info);
   if (pcmFile == nullptr) throw GetError::encoder(file);
 
   int seconds = pxtn->master->get_meas_num() * pxtn->master->get_beat_num() /
@@ -258,8 +265,9 @@ void decode(std::filesystem::path file) {
   render(renderSize);
 
   sf_write_raw(pcmFile, buf, renderSize);
-  logToConsole("Successfully wrote " + std::to_string(renderSize) + " bytes",
-               LogState::Info);
+  //  logToConsole("Successfully wrote " + std::to_string(renderSize) + "
+  //  bytes",
+  //               LogState::Info);
 
   sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
   sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));

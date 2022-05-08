@@ -55,17 +55,7 @@ add_executable(pxtone-renderer
 )
 
 find_package(SndFile REQUIRED)
+find_package(Vorbis REQUIRED)
+find_package(Ogg REQUIRED)
 
-
-find_package(PkgConfig QUIET)
-pkg_check_modules(vorbisfile REQUIRED IMPORTED_TARGET vorbisfile)
-target_link_libraries(pxtone-renderer PRIVATE PkgConfig::vorbisfile SndFile::sndfile)
-set(PKG_CONFIG_REQUIRES "${PKG_CONFIG_REQUIRES} vorbisfile") # replace with find_package later
-#find_package(Vorbis REQUIRED)
-#find_package(Ogg REQUIRED)
-
-#include_directories(${VORBIS_INCLUDE_DIRS} ${OGG_INCLUDE_DIRS})
-#target_link_libraries(pxtone-renderer m ${VORBIS_LIBRARIES} ${OGG_LIBRARIES})
-##target_link_directories(pxtone-renderer PRIVATE ogg vorbis)
-##add_subdirectory(ogg)
-##add_subdirectory(vorbis)
+target_link_libraries(pxtone-renderer PRIVATE SndFile::sndfile Vorbis::vorbisfile)
