@@ -5,14 +5,11 @@ project(pxtone-renderer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_FLAGS "-DpxINCLUDE_OGGVORBIS")
 
 add_executable(pxtone-renderer
     main.cpp
-    global.h
-
-    encoder.cpp
-    encoder.h
 
     pxtone/pxtnDelay.cpp
     pxtone/pxtnDelay.h
@@ -57,6 +54,18 @@ add_executable(pxtone-renderer
     pxtone/pxtoneNoise.h
 )
 
-target_link_libraries(pxtone-renderer m)
-add_subdirectory(ogg)
-add_subdirectory(vorbis)
+find_package(SndFile REQUIRED)
+
+
+find_package(PkgConfig QUIET)
+pkg_check_modules(vorbisfile REQUIRED IMPORTED_TARGET vorbisfile)
+target_link_libraries(pxtone-renderer PRIVATE PkgConfig::vorbisfile SndFile::sndfile)
+set(PKG_CONFIG_REQUIRES "${PKG_CONFIG_REQUIRES} vorbisfile") # replace with find_package later
+#find_package(Vorbis REQUIRED)
+#find_package(Ogg REQUIRED)
+
+#include_directories(${VORBIS_INCLUDE_DIRS} ${OGG_INCLUDE_DIRS})
+#target_link_libraries(pxtone-renderer m ${VORBIS_LIBRARIES} ${OGG_LIBRARIES})
+##target_link_directories(pxtone-renderer PRIVATE ogg vorbis)
+##add_subdirectory(ogg)
+##add_subdirectory(vorbis)

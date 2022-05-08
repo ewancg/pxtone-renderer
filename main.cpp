@@ -1,16 +1,71 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <set>
 #include <vector>
 
-#include "encoder.h"
-#include "global.h"
-#include "ogg/ogg.h"
-#include "pxtone/pxtn.h"
 #include "pxtone/pxtnService.h"
-#include "vorbis/vorbisenc.h"
+#include "sndfile.h"
+
+#define SAMPLE_RATE 48000
+#define CHANNEL_COUNT 2
+
+// clang-format off
+static const char *usage =
+    "Usage: pxtone-decoder [options] file(s)...\n"
+    "By default, the provided files will be rendered as a .OGG to a file of the same name.\n"
+    "Options:\n"
+    "  -f, --format <OGG:WAV:FLAC>  Encode data to this format.\n"
+    "  -h, --help                   Show this dialog.\n"
+    "  --stdout                     Output the data into stdout (single-file only).\n"
+    "  -q, --quiet                  Omit info & warning messages from console output.";
+// clang-format on
+
+struct GetError {
+  static std::string pxtone(std::string err) { return "pxtone: " + err; }
+  static std::string pxtone(pxtnERR err) {
+    return pxtone(std::string(pxtnError_get_string(err)));
+  }
+  static std::string generic(std::string err) { return "generic: " + err; }
+  static std::string file(std::string err) { return "file: " + err; }
+  static std::string encoder(std::string err) { return "encoder: " + err; }
+  static std::string encoder(SNDFILE *err) {
+    return encoder(std::string(sf_strerror(err)));
+  }
+};
+
+struct Config {
+  enum Format : unsigned char { OGG, WAV, FLAC };
+  Format format = OGG;
+  double fadeOutTime = 0;
+  bool multipleFiles = false;
+  bool toStdout = false;
+  std::string *filePath;
+} static config;
+
+enum LogState : unsigned char { Error, Warning, Info };
+bool logToConsole(std::string text = "", LogState warning = Error) {
+  std::string str;
+  if (warning == Error)
+    str += "Error: ";
+  else if (warning == Warning)
+    str += "Warning: ";
+  else
+    str += "Info: ";
+
+  str += text;
+  if (warning == Error) {
+    if (!text.empty()) {
+      if (*str.end() != '\n') str.push_back('\n');
+    }
+    str += usage;
+  }
+  std::cout << str << std::endl;
+  return false;  // returns so that errors can be one-liners (return
+                 // logToConsole(...))
+}
 
 typedef std::pair<std::string, std::string> Arg;
 struct KnownArg {
@@ -150,22 +205,67 @@ void decode(std::filesystem::path file) {
   err = pxtn->tones_ready();
   if (err != pxtnOK) throw GetError::pxtone(err);
 
-  pxtnVOMITPREPARATION prep{};
-  prep.flags |= pxtnVOMITPREPFLAG_loop |
-                pxtnVOMITPREPFLAG_unit_mute;  // TODO: figure this out
+  pxtnVOMITPREPARATION prep;
+  prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
   prep.start_pos_sample = 0;
   prep.master_volume = 0.8f;  // this is probably good
+  prep.fadein_sec = 0;
 
   if (!pxtn->moo_preparation(&prep))
     throw GetError::pxtone("I Have No Mouth, and I Must Moo");
-
-  pxtn->evels->Release();
 
   logToConsole("Successfully opened file " + file.filename().string() + ", " +
                    std::to_string(size) + " bytes read.",
                LogState::Info);
 
-  // now decode lol
+  SF_INFO info;
+  info.samplerate = SAMPLE_RATE;
+  info.channels = CHANNEL_COUNT;
+  info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+
+  //  info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS; // does not yet work
+
+  //  info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_16; // also does not yet work
+
+  if (!sf_format_check(&info))
+    throw GetError::encoder("Invalid encoder format.");
+
+  SNDFILE *pcmFile = sf_open(
+      std::filesystem::absolute(file.replace_extension(".wav").filename())
+          .string()
+          .c_str(),
+      SFM_WRITE, &info);
+  if (pcmFile == nullptr) throw GetError::encoder(file);
+
+  int seconds = pxtn->master->get_meas_num() * pxtn->master->get_beat_num() /
+                pxtn->master->get_beat_tempo() * 60;
+
+  int num_samples = int(SAMPLE_RATE * seconds);
+  int renderSize = num_samples * CHANNEL_COUNT * 16 / 8;
+
+  int written = 0;
+  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize)));
+  auto render = [&](int len) {
+    while (written < len) {
+      int mooed_len = 0;
+      if (!pxtn->Moo(buf, len - written, &mooed_len))
+        throw "Moo error during rendering. Bytes written so far: " +
+            std::to_string(written);
+
+      written += mooed_len;
+    }
+  };
+  render(renderSize);
+
+  sf_write_raw(pcmFile, buf, renderSize);
+  logToConsole("Successfully wrote " + std::to_string(renderSize) + " bytes",
+               LogState::Info);
+
+  sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
+  sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
+
+  sf_close(pcmFile);
+  pxtn->evels->Release();
 }
 
 int main(int argc, char *argv[]) {
