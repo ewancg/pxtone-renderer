@@ -15,12 +15,18 @@
 // clang-format off
 static const char *usage =
     "Usage: pxtone-decoder [options] file(s)...\n"
-    "By default, the provided files will be rendered as a .WAV to a file of the same name.\n"
+    "By default, the provided files will be rendered as .wav to your working directory.\n"
     "Options:\n"
-    "  -f, --format <OGG:WAV:FLAC>  Encode data to this format.\n"
-    "  -h, --help                   Show this dialog.\n"
-    "  --stdout                     Output the data into stdout (single-file only).\n"
-    "  -q, --quiet                  Omit info & warning messages from console output.";
+    "  --format, -f           [OGG, WAV, FLAC]    Encode data to this format.\n"
+    "  --vbr-quality, -v      [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
+    "  --compression, -c      [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
+    "\n"
+    "  --stdout       Single-file only: Use standard output instead of a file.\n"
+    "  --output, -o   Single-file only: Render to this file instead of your working directory.\n"
+    "\n"
+    "  --help, -h     Show this dialog.\n"
+    "  --quiet, -q    Omit info & warning messages from console output.\n"
+;
 // clang-format on
 
 struct GetError {
@@ -51,7 +57,11 @@ struct Config {
 } static config;
 
 enum LogState : unsigned char { Error, Warning, Info };
-bool logToConsole(std::string text = "", LogState warning = Error) {
+bool help() {
+  std::cout << usage << std::endl;
+  return false;
+}
+bool logToConsole(std::string text, LogState warning = Error) {
   std::string str;
   if (warning == Error)
     str += "Error: ";
@@ -61,13 +71,11 @@ bool logToConsole(std::string text = "", LogState warning = Error) {
     str += "Info: ";
 
   str += text;
-  if (warning == Error) {
-    if (!text.empty()) {
-      if (*str.end() != '\n') str.push_back('\n');
-    }
-    str += usage;
-  }
+  if (*str.end() != '\n') str.push_back('\n');
   std::cout << str << std::endl;
+  if (warning == Error) {
+    help();
+  }
   return false;  // returns so that errors can be one-liners (return
                  // logToConsole(...))
 }
@@ -140,7 +148,7 @@ bool parseArguments(const std::vector<std::string> &args) {
     if (helpFound == argData.end())
       continue;
     else
-      return logToConsole();
+      return help();
   }
 
   for (auto it : argStdout.keyMatches) {
@@ -244,6 +252,10 @@ void decode(std::filesystem::path file) {
               SFM_WRITE, &info);
   if (pcmFile == nullptr) throw GetError::encoder(file);
 
+  double really = 0.8;
+  sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &really, sizeof(double));
+  sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &really, sizeof(double));
+
   int seconds = pxtn->master->get_meas_num() * pxtn->master->get_beat_num() /
                 pxtn->master->get_beat_tempo() * 60;
 
@@ -254,12 +266,12 @@ void decode(std::filesystem::path file) {
   char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize)));
   auto render = [&](int len) {
     while (written < len) {
-      int mooed_len = 0;
-      if (!pxtn->Moo(buf, len - written, &mooed_len))
+      int mooedLength = 0;
+      if (!pxtn->Moo(buf, len - written, &mooedLength))
         throw "Moo error during rendering. Bytes written so far: " +
             std::to_string(written);
 
-      written += mooed_len;
+      written += mooedLength;
     }
   };
   render(renderSize);
@@ -271,7 +283,7 @@ void decode(std::filesystem::path file) {
 
   sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
   sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
-
+  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
   sf_close(pcmFile);
   pxtn->evels->Release();
 }
@@ -302,3 +314,18 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
+
+/* TODO:
+ *  figure out why it makes empty files -- i think it is not mooing
+ *
+ *  make it do intro & loop sections separately
+ *
+ *  clean up cmakelists and add deployment for libraries locally instead of
+ *  cmake-dependent
+ *
+ *  implement & test other formats libsndfile supports (big ones are opus and
+ *  mp3)
+ *
+ *  implement args -q, -o, --stdout, -c, -v (easy)
+ *
+ **/
