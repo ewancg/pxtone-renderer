@@ -250,7 +250,7 @@ void decode(std::filesystem::path file) {
                   .string()
                   .c_str(),
               SFM_WRITE, &info);
-  if (pcmFile == nullptr) throw GetError::encoder(file);
+  if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
   double really = 0.8;
   sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &really, sizeof(double));
@@ -309,8 +309,7 @@ int main(int argc, char *argv[]) {
         logToConsole(err);
       }
     else
-      logToConsole("File " + std::string(it) + " not found.",
-                   LogState::Warning);
+      logToConsole("File " + it.string() + " not found.", LogState::Warning);
   }
   return 0;
 }
