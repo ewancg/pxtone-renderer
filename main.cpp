@@ -253,6 +253,7 @@ void decode(std::filesystem::path file) {
   if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
   double really = 0.8;
+
   sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &really, sizeof(double));
   sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &really, sizeof(double));
 
@@ -263,7 +264,8 @@ void decode(std::filesystem::path file) {
   int renderSize = num_samples * CHANNEL_COUNT * 16 / 8;
 
   int written = 0;
-  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize)));
+  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
+  buf[renderSize + 1] = '\0';
   auto render = [&](int len) {
     while (written < len) {
       int mooedLength = 0;
@@ -276,14 +278,23 @@ void decode(std::filesystem::path file) {
   };
   render(renderSize);
 
-  sf_write_raw(pcmFile, buf, renderSize);
-  //  logToConsole("Successfully wrote " + std::to_string(renderSize) + "
-  //  bytes",
-  //               LogState::Info);
-
   sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
   sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
-  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
+  //  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
+
+  //  sf_write_raw(pcmFile, buf, renderSize);
+  // i'm not supposed to use write_raw; even though it works i think it might
+  // only be for wav, ogg/flac don't support? write ints instead: custom logic
+  // below
+  int halved = renderSize / 2;
+  short *z[halved];
+  for (int i = 0; i < halved; i++) {
+    short s = static_cast<short>(buf[i * 2]);
+    z[i] = &s;
+  }
+  sf_write_short(pcmFile, *z, renderSize);
+
+  sf_write_sync(pcmFile);
   sf_close(pcmFile);
   pxtn->evels->Release();
 }
@@ -322,9 +333,10 @@ int main(int argc, char *argv[]) {
  *  clean up cmakelists and add deployment for libraries locally instead of
  *  cmake-dependent
  *
+ *  fix changes in spaces in filename - oversight when doin getline
+ *
  *  implement & test other formats libsndfile supports (big ones are opus and
  *  mp3)
  *
  *  implement args -q, -o, --stdout, -c, -v (easy)
- *
  **/

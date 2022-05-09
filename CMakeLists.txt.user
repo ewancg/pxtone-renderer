@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.0, 2022-05-09T11:32:38. -->
+<!-- Written by QtCreator 7.0.0, 2022-05-09T12:27:05. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -278,12 +278,18 @@
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">pxtone-renderer</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.pxtone-renderer</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">pxtone-renderer</value>
+    <value type="QString" key="RunConfiguration.Arguments">./in_these_uncertain_times_jaxcheese.ptcop --format wav</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseTerminal">false</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory">C:/Users/2068568/Desktop/ewanstuff/projects/pxtone-renderer/</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">C:/Users/2068568/Desktop/ewanstuff/projects/pxtone-renderer/build</value>
    </valuemap>
    <value type="qlonglong" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>
