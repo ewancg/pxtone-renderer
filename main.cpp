@@ -280,19 +280,20 @@ void decode(std::filesystem::path file) {
 
   sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
   sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
-  //  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
+  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-  //  sf_write_raw(pcmFile, buf, renderSize);
+  sf_write_raw(pcmFile, buf, renderSize);
   // i'm not supposed to use write_raw; even though it works i think it might
   // only be for wav, ogg/flac don't support? write ints instead: custom logic
   // below
-  int halved = renderSize / 2;
-  short *z[halved];
-  for (int i = 0; i < halved; i++) {
-    short s = static_cast<short>(buf[i * 2]);
-    z[i] = &s;
-  }
-  sf_write_short(pcmFile, *z, renderSize);
+
+  //  int halved = renderSize / 2;
+  //  short *z[halved];
+  //  for (int i = 0; i < halved; i++) {
+  //    short s = static_cast<short>(buf[i * 2]);
+  //    z[i] = &s;
+  //  }
+  //  sf_write_short(pcmFile, *z, renderSize);
 
   sf_write_sync(pcmFile);
   sf_close(pcmFile);
