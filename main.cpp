@@ -282,18 +282,23 @@ void decode(std::filesystem::path file) {
   sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
   sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-  sf_write_raw(pcmFile, buf, renderSize);
-  // i'm not supposed to use write_raw; even though it works i think it might
-  // only be for wav, ogg/flac don't support? write ints instead: custom logic
-  // below
+  if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
+    throw GetError::file("Error writing complete audio buffer: wrote " +
+                         std::to_string(size) + " out of " +
+                         std::to_string(renderSize));
+  // i'm not supposed to use write_raw; even though it works i think it
+  // might only be for wav, ogg/flac don't support? write ints instead:
+  // custom logic below
 
   //  int halved = renderSize / 2;
-  //  short *z[halved];
-  //  for (int i = 0; i < halved; i++) {
-  //    short s = static_cast<short>(buf[i * 2]);
-  //    z[i] = &s;
+  //  //  short *z[halved];  //= static_cast<short
+  //  **>(malloc(renderSize)); for (int i = 0; i < halved; i++) {
+  //    short s = (buf)[i * 2] << 8 | (buf)[(i * 2) + 1];
+  //    //    short s = static_cast<short>(buf[i * 2]);
+  //    sf_writef_short(pcmFile, &s, 1 /*halved*/);
+  //    //    z[i] = &s;
   //  }
-  //  sf_write_short(pcmFile, *z, renderSize);
+  // this code does not work right now; when it does work it creates empty files
 
   sf_write_sync(pcmFile);
   sf_close(pcmFile);
