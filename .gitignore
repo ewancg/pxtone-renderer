@@ -74,3 +74,6 @@ Thumbs.db
 # Build Directory
 /build
 
+*.wav
+*.ogg
+*.flac
