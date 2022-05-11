@@ -392,6 +392,4 @@ int main(int argc, char *argv[]) {
  *
  *  implement & test other formats libsndfile supports (big ones are opus and
  *  mp3)
- *
- *  implement args -q, -o, --stdout, -c, -v (easy)
  **/
