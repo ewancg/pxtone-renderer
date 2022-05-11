@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.0, 2022-05-10T12:48:03. -->
+<!-- Written by QtCreator 7.0.0, 2022-05-11T12:21:44. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -281,7 +281,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">pxtone-renderer</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.pxtone-renderer</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">pxtone-renderer</value>
-    <value type="QString" key="RunConfiguration.Arguments">./in_these_uncertain_times_jaxcheese.ptcop --format ogg</value>
+    <value type="QString" key="RunConfiguration.Arguments">./in_these_uncertain_times_jaxcheese.ptcop --format wav --fadeout</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>

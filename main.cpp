@@ -18,10 +18,11 @@ static const char *usage =
     "By default, the provided files will be rendered as .wav to your working directory.\n"
     "Options:\n"
     "  --format, -f           [OGG, WAV, FLAC]    Encode data to this format.\n"
-    "  --vbr-quality, -v      [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
+    "  --vbr, -v              [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
     "  --compression, -c      [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
+    "  --fadeout              [seconds]           Specify song fadeout time.\n"
     "\n"
-    "  --stdout       Single-file only: Use standard output instead of a file.\n"
+//    "  --stdout       Single-file only: Use standard output instead of a file.\n" // mehhhhh i don't wanna implement virtual file i/o
     "  --output, -o   Single-file only: Render to this file instead of your working directory.\n"
     "\n"
     "  --help, -h     Show this dialog.\n"
@@ -50,10 +51,10 @@ struct Config {
   };
   Format format = OGG;
   std::string formatSuffix = "wav";
-  double fadeOutTime = 0;
-  bool multipleFiles = false;
-  bool toStdout = false;
-  std::string *filePath;
+  double fadeOutTime = 0, vbrRate = 0, compressionRate = 0;
+  //  bool toStdout = false;
+  bool quiet = true;
+  std::string filePath;
 } static config;
 
 enum LogState : unsigned char { Error, Warning, Info };
@@ -62,6 +63,7 @@ bool help() {
   return false;
 }
 bool logToConsole(std::string text, LogState warning = Error) {
+  //  if (config.toStdout) return false;
   std::string str;
   if (warning == Error)
     str += "Error: ";
@@ -72,8 +74,10 @@ bool logToConsole(std::string text, LogState warning = Error) {
 
   str += text;
   if (*str.end() != '\n') str.push_back('\n');
-  std::cout << str << std::endl;
-  if (warning == Error) {
+  if (warning != Error) {
+    if (!config.quiet) std::cout << str << std::endl;
+  } else {
+    std::cout << str << std::endl;
     help();
   }
   return false;  // returns so that errors can be one-liners (return
@@ -91,18 +95,23 @@ struct KnownArg {
   bool takesParameter = false;
 };
 
-static const KnownArg argHelp = {{"--help", "-h"}}, argStdout = {{"--stdout"}},
-                      argFormat = {{"--format", "-f"}, true};
-static const std::vector<KnownArg> knownArguments = {argHelp, argStdout,
-                                                     argFormat};
+static const KnownArg argFormat = {{"--format", "-f"}, true},
+                      argVbr{{"--vbr", "-v"}, true},
+                      argCompression{{"--compression", "-c"}, true},
+                      //                      argStdout = {{"--stdout"}},
+    argOutput = {{"--output", "-o"}, true}, argHelp = {{"--help", "-h"}},
+                      argQuiet{{"--quiet", "-q"}},
+                      argFadeOut{{"--fadeout"}, true};
+
+static const std::vector<KnownArg> knownArguments = {
+    argFormat, argVbr,   argCompression, /*argStdout,*/ argOutput,
+    argHelp,   argQuiet, argFadeOut};
 
 KnownArg findArgument(const std::string &key) {
   KnownArg match;
   for (auto it : knownArguments) {
     auto arg = it.keyMatches.find(key);
-    if (arg != it.keyMatches.end()) {
-      match = it;
-    }
+    if (arg != it.keyMatches.end()) match = it;
   }
   return match;
 }
@@ -129,14 +138,19 @@ bool parseArguments(const std::vector<std::string> &args) {
           waitingForSecond = false;
         }
       } else {
-        if (it != args.end()) ++it;
-        if (*it->begin() == '-')
+        bool argSupplied = true;
+        if (++it != args.end()) {
+          if (*it->begin() == '-')
+            argSupplied = false;
+          else {
+            arg.second = *it;
+            waitingForSecond = false;
+          }
+        } else
+          argSupplied = false;
+        if (!argSupplied)
           return logToConsole("Argument '" + arg.first +
                               "' requires a parameter.");
-        else {
-          arg.second = *it;
-          waitingForSecond = false;
-        }
       }
     }
     waitingForSecond = true;
@@ -145,24 +159,58 @@ bool parseArguments(const std::vector<std::string> &args) {
 
   for (auto it : argHelp.keyMatches) {
     auto helpFound = argData.find(it);
-    if (helpFound == argData.end())
-      continue;
-    else
-      return help();
+    if (helpFound != argData.end()) return help();
   }
 
-  for (auto it : argStdout.keyMatches) {
-    auto stdoutFound = argData.find(it);
-    if (stdoutFound == argData.end())
-      continue;
-    else {
+  for (auto it : argFadeOut.keyMatches) {
+    auto fadeOutFound = argData.find(it);
+    if (fadeOutFound != argData.end())
+      config.fadeOutTime = std::stod(fadeOutFound->second);
+  }
+
+  for (auto it : argQuiet.keyMatches) {
+    auto quietFound = argData.find(it);
+    if (quietFound != argData.end()) config.quiet = false;
+  }
+
+  for (auto it : argVbr.keyMatches) {
+    auto vbrFound = argData.find(it);
+    if (vbrFound != argData.end()) config.vbrRate = std::stod(vbrFound->second);
+  }
+  for (auto it : argCompression.keyMatches) {
+    auto compressionFound = argData.find(it);
+    if (compressionFound != argData.end())
+      config.compressionRate = std::stod(compressionFound->second);
+  }
+
+  for (auto it : argOutput.keyMatches) {
+    auto outputFound = argData.find(it);
+    if (outputFound != argData.end()) {
       if (files.size() > 1)
         return logToConsole(
-            "Standard output cannot be used when rendering multiple files.");
+            "Output file path can only be used when processing 1 file.");  // Potentially
+                                                                           // replace
+                                                                           // with
+                                                                           // output
+                                                                           // directory
+                                                                           // mode
+                                                                           // instead
       else
-        config.toStdout = true;
+        config.filePath = outputFound->second;
     }
   }
+
+  //  for (auto it : argStdout.keyMatches) {
+  //    auto stdoutFound = argData.find(it);
+  //    if (stdoutFound != argData.end()) {
+  //      if (files.size() > 1)
+  //        return logToConsole(
+  //            "Standard output cannot be used when rendering multiple
+  //            files.");
+  //      else
+  //        config.toStdout = true;
+  //    }
+  //  }
 
   for (auto it : argFormat.keyMatches) {
     auto formatFound = argData.find(it);
@@ -188,7 +236,7 @@ bool parseArguments(const std::vector<std::string> &args) {
   return true;
 }
 
-void decode(std::filesystem::path file) {
+void convert(std::filesystem::path file) {
   FILE *fp = fopen(file.string().c_str(), "rb");
   if (fp == nullptr)
     throw GetError::file("Error opening file " + file.string() +
@@ -226,15 +274,14 @@ void decode(std::filesystem::path file) {
   prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
   prep.start_pos_sample = 0;
   prep.master_volume = 0.8f;  // this is probably good
-  prep.fadein_sec = 0;
+  prep.fadein_sec = config.fadeOutTime;
 
   if (!pxtn->moo_preparation(&prep))
     throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
-  //  logToConsole("Successfully opened file " + file.filename().string() + ", "
-  //  +
-  //                   std::to_string(size) + " bytes read.",
-  //               LogState::Info);
+  logToConsole("Successfully opened file " + file.filename().string() + ", " +
+                   std::to_string(size) + " bytes read.",
+               LogState::Info);
 
   SF_INFO info;
   info.samplerate = SAMPLE_RATE;
@@ -244,18 +291,20 @@ void decode(std::filesystem::path file) {
   if (!sf_format_check(&info))
     throw GetError::encoder("Invalid encoder format.");
 
-  SNDFILE *pcmFile =
-      sf_open(std::filesystem::absolute(
-                  file.replace_extension(config.formatSuffix).filename())
-                  .string()
-                  .c_str(),
-              SFM_WRITE, &info);
+  std::filesystem::path newFilePath =
+      config.filePath.empty()
+          ? std::filesystem::absolute(
+                file.replace_extension(config.formatSuffix).filename())
+          : std::filesystem::absolute(config.filePath);
+
+  SNDFILE *pcmFile = sf_open(newFilePath.string().c_str(), SFM_WRITE, &info);
+
   if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
-  double really = 0.8;
-
-  sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &really, sizeof(double));
-  sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &really, sizeof(double));
+  sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &config.compressionRate,
+             sizeof(double));
+  sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
+             sizeof(double));
 
   int seconds = pxtn->master->get_meas_num() * pxtn->master->get_beat_num() /
                 pxtn->master->get_beat_tempo() * 60;
@@ -321,7 +370,7 @@ int main(int argc, char *argv[]) {
   for (auto it : files) {
     auto absolute = std::filesystem::absolute(it);
     if (std::filesystem::exists(it)) try {
-        decode(std::filesystem::absolute(it));
+        convert(std::filesystem::absolute(it));
       } catch (std::string err) {
         logToConsole(err);
       }
