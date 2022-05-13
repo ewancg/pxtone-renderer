@@ -21,6 +21,8 @@ constexpr char usage[] =
     "  --vbr, -v           [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
     "  --compression, -c   [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
     "  --fadeout           [seconds]           Specify song fadeout time.\n"
+    "  --loop, -l          Loop the song this many times.\n"
+    "  --loop-separately   Separate the song into 'intro' and 'loop' files. Can't be used with -l.\n"
     "\n"
     "  --output, -o   If 1 file is being rendered, put the rendered output at this path.\n"
     "                 If multiple are being rendered, put them in this directory.\n"
@@ -50,13 +52,12 @@ struct Config {
     FLAC = SF_FORMAT_FLAC | SF_FORMAT_PCM_16
   };
   Format format = WAV;
-  std::string formatSuffix = "wav";
-  double fadeOutTime = 0, vbrRate = 0, compressionRate = 0;
   //  bool toStdout = false;
-  bool quiet = true;
-  bool singleFile = true;
-  bool outputToDirectory = false;
-  std::string fileName;
+  int loopCount = 1;
+  bool loopSeparately = false, quiet = true, singleFile = true,
+       outputToDirectory = false;
+  double fadeOutTime = 0, vbrRate = 0, compressionRate = 0;
+  std::string formatSuffix = "wav", fileName;
   std::filesystem::path outputDirectory;
 } static config;
 
@@ -416,6 +417,7 @@ int main(int argc, char *argv[]) {
  *  figure out why it makes empty files -- i think it is not mooing
  *
  *  make it do intro & loop sections separately
+ *  add loop count
  *
  *  clean up cmakelists and add deployment for libraries locally instead of
  *  cmake-dependent
