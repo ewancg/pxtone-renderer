@@ -13,17 +13,17 @@
 #define CHANNEL_COUNT 2
 
 // clang-format off
-static const char *usage =
+constexpr char usage[] =
     "Usage: pxtone-decoder [options] file(s)...\n"
     "By default, the provided files will be rendered as .wav to your working directory.\n"
     "Options:\n"
-    "  --format, -f           [OGG, WAV, FLAC]    Encode data to this format.\n"
-    "  --vbr, -v              [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
-    "  --compression, -c      [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
-    "  --fadeout              [seconds]           Specify song fadeout time.\n"
+    "  --format, -f        [OGG, WAV, FLAC]    Encode data to this format.\n"
+    "  --vbr, -v           [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
+    "  --compression, -c   [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
+    "  --fadeout           [seconds]           Specify song fadeout time.\n"
     "\n"
-//    "  --stdout       Single-file only: Use standard output instead of a file.\n" // mehhhhh i don't wanna implement virtual file i/o
-    "  --output, -o   Single-file only: Render to this file instead of your working directory.\n"
+    "  --output, -o   If 1 file is being rendered, put the rendered output at this path.\n"
+    "                 If multiple are being rendered, put them in this directory.\n"
     "\n"
     "  --help, -h     Show this dialog.\n"
     "  --quiet, -q    Omit info & warning messages from console output.\n"
@@ -49,12 +49,15 @@ struct Config {
     WAV = SF_FORMAT_WAV | SF_FORMAT_PCM_16,
     FLAC = SF_FORMAT_FLAC | SF_FORMAT_PCM_16
   };
-  Format format = OGG;
+  Format format = WAV;
   std::string formatSuffix = "wav";
   double fadeOutTime = 0, vbrRate = 0, compressionRate = 0;
   //  bool toStdout = false;
   bool quiet = true;
-  std::string filePath;
+  bool singleFile = true;
+  bool outputToDirectory = false;
+  std::string fileName;
+  std::filesystem::path outputDirectory;
 } static config;
 
 enum LogState : unsigned char { Error, Warning, Info };
@@ -73,12 +76,11 @@ bool logToConsole(std::string text, LogState warning = Error) {
     str += "Info: ";
 
   str += text;
-  if (*str.end() != '\n') str.push_back('\n');
-  if (warning != Error) {
-    if (!config.quiet) std::cout << str << std::endl;
-  } else {
+  if (warning != Error && config.quiet)
+    return false;
+  else {
     std::cout << str << std::endl;
-    help();
+    if (warning == Error) help();
   }
   return false;  // returns so that errors can be one-liners (return
                  // logToConsole(...))
@@ -156,6 +158,15 @@ bool parseArguments(const std::vector<std::string> &args) {
     waitingForSecond = true;
     argData.insert(arg);
   }
+  switch (files.size()) {
+    case 0:
+      return logToConsole("At least 1 .ptcop file is required.");
+    case 1:
+      config.singleFile = true;
+      break;
+    default:
+      config.singleFile = false;
+  }
 
   for (auto it : argHelp.keyMatches) {
     auto helpFound = argData.find(it);
@@ -183,27 +194,23 @@ bool parseArguments(const std::vector<std::string> &args) {
       config.compressionRate = std::stod(compressionFound->second);
   }
 
+  std::filesystem::path path =
+      std::filesystem::absolute(std::filesystem::current_path());
   for (auto it : argOutput.keyMatches) {
     auto outputFound = argData.find(it);
-    if (outputFound != argData.end()) {
-      if (files.size() > 1)
-        return logToConsole(
-            "Output file path can only be used when processing 1 file.");  // Potentially
-                                                                           // replace
-                                                                           // with
-                                                                           // output
-                                                                           // directory
-                                                                           // mode
-                                                                           // instead
-      else
-        config.filePath = outputFound->second;
-    }
+    if (outputFound != argData.end())
+      path = std::filesystem::absolute(outputFound->second);
   }
+
+  config.outputToDirectory = std::filesystem::is_directory(path);
+  if (config.singleFile && !config.outputToDirectory)
+    config.fileName = path.filename();
+  config.outputDirectory = std::filesystem::absolute(path);
 
   //  for (auto it : argStdout.keyMatches) {
   //    auto stdoutFound = argData.find(it);
   //    if (stdoutFound != argData.end()) {
-  //      if (files.size() > 1)
+  //      if (!config.singleFile)
   //        return logToConsole(
   //            "Standard output cannot be used when rendering multiple
   //            files.");
@@ -291,13 +298,20 @@ void convert(std::filesystem::path file) {
   if (!sf_format_check(&info))
     throw GetError::encoder("Invalid encoder format.");
 
-  std::filesystem::path newFilePath =
-      config.filePath.empty()
-          ? std::filesystem::absolute(
-                file.replace_extension(config.formatSuffix).filename())
-          : std::filesystem::absolute(config.filePath);
+  std::filesystem::path newFilePath = config.outputDirectory;
 
-  SNDFILE *pcmFile = sf_open(newFilePath.string().c_str(), SFM_WRITE, &info);
+  if (config.outputToDirectory) {
+    if (!std::filesystem::exists(newFilePath))
+      if (!std::filesystem::create_directory(newFilePath))
+        throw GetError::file("Unable to create destination path.");
+    if (config.singleFile && !config.fileName.empty())
+      newFilePath += "/" + config.fileName;
+    else
+      newFilePath +=
+          "/" + file.filename().replace_extension(config.formatSuffix).string();
+  }
+
+  SNDFILE *pcmFile = sf_open(newFilePath.c_str(), SFM_WRITE, &info);
 
   if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
@@ -355,14 +369,32 @@ void convert(std::filesystem::path file) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc <= 1) return logToConsole("At least 1 .ptcop file is required.");
+  if (argc <= 1) return logToConsole("Expected at least 1 parameter.");
 
   std::vector<std::string> args;
+  //  for (int i = 1; i < argc; i++) {
+  //    std::string str = argv[i];
+  //    std::replace(str.begin(), str.end(), '=', ' ');
+  //    std::stringstream ss(str);
+  //    while (getline(ss, str, ' ')) args.push_back(str);
+  //  }
+
+  std::string str;
   for (int i = 1; i < argc; i++) {
-    std::string str = argv[i];
-    std::replace(str.begin(), str.end(), '=', ' ');
-    std::stringstream ss(str);
-    while (getline(ss, str, ' ')) args.push_back(str);
+    std::string arg = argv[i];
+    auto parseArg = [&]() -> bool {
+      size_t x = arg.find('=');
+      if (x != arg.npos) {
+        args.push_back(arg.substr(0, x));
+        arg.erase(0, x + 1);
+        args.push_back(arg);
+        return arg.find('=') != arg.npos;
+      } else {
+        args.push_back(arg);
+        return false;
+      }
+    };
+    if (parseArg()) parseArg();
   }
 
   if (!parseArguments(args)) return 0;
@@ -372,7 +404,7 @@ int main(int argc, char *argv[]) {
     if (std::filesystem::exists(it)) try {
         convert(std::filesystem::absolute(it));
       } catch (std::string err) {
-        logToConsole(err);
+        return logToConsole(err);
       }
     else
       logToConsole("File " + it.string() + " not found.", LogState::Warning);
@@ -387,8 +419,6 @@ int main(int argc, char *argv[]) {
  *
  *  clean up cmakelists and add deployment for libraries locally instead of
  *  cmake-dependent
- *
- *  fix changes in spaces in filename - oversight when doin getline
  *
  *  implement & test other formats libsndfile supports (big ones are opus and
  *  mp3)
