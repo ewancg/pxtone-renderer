@@ -104,11 +104,13 @@ static const KnownArg argFormat = {{"--format", "-f"}, true},
                       //                      argStdout = {{"--stdout"}},
     argOutput = {{"--output", "-o"}, true}, argHelp = {{"--help", "-h"}},
                       argQuiet{{"--quiet", "-q"}},
-                      argFadeOut{{"--fadeout"}, true};
+                      argFadeOut{{"--fadeout"}, true},
+                      argLoop{{"--loop", "-l"}, true},
+                      argLoopSeparately{{"--loop-separately"}};
 
 static const std::vector<KnownArg> knownArguments = {
-    argFormat, argVbr,   argCompression, /*argStdout,*/ argOutput,
-    argHelp,   argQuiet, argFadeOut};
+    argFormat, argVbr,     argCompression, /*argStdout,*/ argOutput, argHelp,
+    argQuiet,  argFadeOut, argLoop,        argLoopSeparately};
 
 KnownArg findArgument(const std::string &key) {
   KnownArg match;
@@ -168,23 +170,19 @@ bool parseArguments(const std::vector<std::string> &args) {
     default:
       config.singleFile = false;
   }
-
   for (auto it : argHelp.keyMatches) {
     auto helpFound = argData.find(it);
     if (helpFound != argData.end()) return help();
   }
-
   for (auto it : argFadeOut.keyMatches) {
     auto fadeOutFound = argData.find(it);
     if (fadeOutFound != argData.end())
       config.fadeOutTime = std::stod(fadeOutFound->second);
   }
-
   for (auto it : argQuiet.keyMatches) {
     auto quietFound = argData.find(it);
     if (quietFound != argData.end()) config.quiet = false;
   }
-
   for (auto it : argVbr.keyMatches) {
     auto vbrFound = argData.find(it);
     if (vbrFound != argData.end()) config.vbrRate = std::stod(vbrFound->second);
@@ -193,6 +191,15 @@ bool parseArguments(const std::vector<std::string> &args) {
     auto compressionFound = argData.find(it);
     if (compressionFound != argData.end())
       config.compressionRate = std::stod(compressionFound->second);
+  }
+  for (auto it : argLoop.keyMatches) {
+    auto loopFound = argData.find(it);
+    if (loopFound != argData.end())
+      config.loopCount = std::stoi(loopFound->second);
+  }
+  for (auto it : argLoopSeparately.keyMatches) {
+    auto loopSeparatelyFound = argData.find(it);
+    if (loopSeparatelyFound != argData.end()) config.loopSeparately = true;
   }
 
   std::filesystem::path path =
@@ -418,6 +425,8 @@ int main(int argc, char *argv[]) {
  *
  *  make it do intro & loop sections separately
  *  add loop count
+ *
+ *  remove arg parsing boilerplate
  *
  *  clean up cmakelists and add deployment for libraries locally instead of
  *  cmake-dependent
