@@ -361,7 +361,7 @@ void convert(std::filesystem::path file) {
         written += mooedLength;
       }
     };
-    while (config.loopCount--) {
+    while (--config.loopCount) {
       mooSection(renderSize);
 
       if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
