@@ -9,6 +9,7 @@
 #include "pxtone/pxtnService.h"
 #include "sndfile.h"
 
+#pragma pack(1)
 #define SAMPLE_RATE 48000
 #define CHANNEL_COUNT 2
 
@@ -24,7 +25,7 @@ constexpr char usage[] =
     "  --loop, -l          Loop the song this many times.\n"
     "  --loop-separately   Separate the song into 'intro' and 'loop' files. Can't be used with -l.\n"
     "\n"
-    "  --output, -o   If 1 file is being rendered, put the rendered output at this path.\n"
+    "  --output, -o   If 1 file is being rendered, place the resulting file here.\n"
     "                 If multiple are being rendered, put them in this directory.\n"
     "\n"
     "  --help, -h     Show this dialog.\n"
@@ -289,7 +290,7 @@ void convert(std::filesystem::path file) {
   prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
   prep.start_pos_sample = 0;
   prep.master_volume = 0.8f;  // this is probably good
-  prep.fadein_sec = config.fadeOutTime;
+  prep.fadein_sec = static_cast<float>(config.fadeOutTime);
 
   if (!pxtn->moo_preparation(&prep))
     throw GetError::pxtone("I Have No Mouth, and I Must Moo");
@@ -319,44 +320,77 @@ void convert(std::filesystem::path file) {
           "/" + file.filename().replace_extension(config.formatSuffix).string();
   }
 
-  SNDFILE *pcmFile = sf_open(newFilePath.c_str(), SFM_WRITE, &info);
+  auto render = [&info, &pxtn](int seconds, std::string path) {
+    int sampleCount = SAMPLE_RATE * seconds;
+    int renderSize = sampleCount * CHANNEL_COUNT * 16 / 8;
 
-  if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
+    int written = 0;
+    char *buf =
+        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
+    buf[renderSize + 1] = '\0';
 
-  sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &config.compressionRate,
-             sizeof(double));
-  sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
-             sizeof(double));
+    auto render = [&](int len) {
+      while (written < len) {
+        int mooedLength = 0;
+        if (!pxtn->Moo(buf, len - written, &mooedLength))
+          throw "Moo error during rendering. Bytes written so far: " +
+              std::to_string(written);
 
-  int seconds = pxtn->master->get_meas_num() * pxtn->master->get_beat_num() /
-                pxtn->master->get_beat_tempo() * 60;
+        written += mooedLength;
+      }
+    };
+    render(renderSize);
 
-  int num_samples = int(SAMPLE_RATE * seconds);
-  int renderSize = num_samples * CHANNEL_COUNT * 16 / 8;
+    SNDFILE *pcmFile = sf_open(path.c_str(), SFM_WRITE, &info);
 
-  int written = 0;
-  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
-  buf[renderSize + 1] = '\0';
-  auto render = [&](int len) {
-    while (written < len) {
-      int mooedLength = 0;
-      if (!pxtn->Moo(buf, len - written, &mooedLength))
-        throw "Moo error during rendering. Bytes written so far: " +
-            std::to_string(written);
+    if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
-      written += mooedLength;
-    }
+    sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &config.compressionRate,
+               sizeof(double));
+    sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
+               sizeof(double));
+
+    sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
+    sf_set_string(pcmFile, SF_STR_COMMENT,
+                  pxtn->text->get_comment_buf(nullptr));
+    sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
+
+    if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
+      throw GetError::file("Error writing complete audio buffer: wrote " +
+                           std::to_string(size) + " out of " +
+                           std::to_string(renderSize));
+
+    sf_write_sync(pcmFile);
+    sf_close(pcmFile);
   };
-  render(renderSize);
 
-  sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
-  sf_set_string(pcmFile, SF_STR_COMMENT, pxtn->text->get_comment_buf(nullptr));
-  sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
+  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
+             pxtn->master->get_beat_tempo() * 60,
+         newFilePath);
 
-  if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
-    throw GetError::file("Error writing complete audio buffer: wrote " +
-                         std::to_string(size) + " out of " +
-                         std::to_string(renderSize));
+  //  int written = 0;
+  //  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize +
+  //  1))); buf[renderSize + 1] = '\0'; auto render = [&](int len) {
+  //    while (written < len) {
+  //      int mooedLength = 0;
+  //      if (!pxtn->Moo(buf, len - written, &mooedLength))
+  //        throw "Moo error during rendering. Bytes written so far: " +
+  //            std::to_string(written);
+
+  //      written += mooedLength;
+  //    }
+  //  };
+  //  render(renderSize);
+
+  //  sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
+  //  sf_set_string(pcmFile, SF_STR_COMMENT,
+  //  pxtn->text->get_comment_buf(nullptr)); sf_command(pcmFile,
+  //  SFC_UPDATE_HEADER_NOW, nullptr, 0);
+
+  //  if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
+  //    throw GetError::file("Error writing complete audio buffer: wrote " +
+  //                         std::to_string(size) + " out of " +
+  //                         std::to_string(renderSize));
   // i'm not supposed to use write_raw; even though it works i think it
   // might only be for wav, ogg/flac don't support? write ints instead:
   // custom logic below
@@ -371,8 +405,6 @@ void convert(std::filesystem::path file) {
   //  }
   // this code does not work right now; when it does work it creates empty files
 
-  sf_write_sync(pcmFile);
-  sf_close(pcmFile);
   pxtn->evels->Release();
 }
 
