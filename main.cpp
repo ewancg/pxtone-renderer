@@ -182,7 +182,7 @@ bool parseArguments(const std::vector<std::string> &args) {
   }
   for (auto it : argQuiet.keyMatches) {
     auto quietFound = argData.find(it);
-    if (quietFound != argData.end()) config.quiet = false;
+    if (quietFound == argData.end()) config.quiet = false;
   }
   for (auto it : argVbr.keyMatches) {
     auto vbrFound = argData.find(it);
@@ -213,7 +213,7 @@ bool parseArguments(const std::vector<std::string> &args) {
 
   config.outputToDirectory = std::filesystem::is_directory(path);
   if (config.singleFile && !config.outputToDirectory)
-    config.fileName = path.filename();
+    config.fileName = path.filename().string();
   config.outputDirectory = std::filesystem::absolute(path);
 
   //  for (auto it : argStdout.keyMatches) {
@@ -286,18 +286,14 @@ void convert(std::filesystem::path file) {
   err = pxtn->tones_ready();
   if (err != pxtnOK) throw GetError::pxtone(err);
 
-  pxtnVOMITPREPARATION prep;
-  prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
-  prep.start_pos_sample = 0;
-  prep.master_volume = 0.8f;  // this is probably good
-  prep.fadein_sec = static_cast<float>(config.fadeOutTime);
+  //  pxtnVOMITPREPARATION prep;
+  //  prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
+  //  prep.start_pos_sample = 0;
+  //  prep.master_volume = 0.8f;  // this is probably good
+  //  prep.fadein_sec = static_cast<float>(config.fadeOutTime);
 
-  if (!pxtn->moo_preparation(&prep))
-    throw GetError::pxtone("I Have No Mouth, and I Must Moo");
-
-  logToConsole("Successfully opened file " + file.filename().string() + ", " +
-                   std::to_string(size) + " bytes read.",
-               LogState::Info);
+  //  if (!pxtn->moo_preparation(&prep))
+  //    throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
   SF_INFO info;
   info.samplerate = SAMPLE_RATE;
@@ -307,22 +303,34 @@ void convert(std::filesystem::path file) {
   if (!sf_format_check(&info))
     throw GetError::encoder("Invalid encoder format.");
 
-  std::filesystem::path newFilePath = config.outputDirectory;
+  std::filesystem::path introPath = config.outputDirectory;
 
   if (config.outputToDirectory) {
-    if (!std::filesystem::exists(newFilePath))
-      if (!std::filesystem::create_directory(newFilePath))
+    if (!std::filesystem::exists(introPath))
+      if (!std::filesystem::create_directory(introPath))
         throw GetError::file("Unable to create destination path.");
     if (config.singleFile && !config.fileName.empty())
-      newFilePath += "/" + config.fileName;
+      introPath += "/" + config.fileName;
     else
-      newFilePath +=
+      introPath +=
           "/" + file.filename().replace_extension(config.formatSuffix).string();
   }
 
-  auto render = [&info, &pxtn](int seconds, std::string path) {
-    int sampleCount = SAMPLE_RATE * seconds;
+  auto render = [&info, &pxtn](int measureCount, int startMeas,
+                               std::string path) {
+    int sampleCount =
+        SAMPLE_RATE * (measureCount * pxtn->master->get_beat_num() /
+                       pxtn->master->get_beat_tempo() * 60);
     int renderSize = sampleCount * CHANNEL_COUNT * 16 / 8;
+
+    pxtnVOMITPREPARATION prep;
+    prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
+    prep.start_pos_meas = startMeas;
+    prep.master_volume = 0.8f;  // this is probably good
+    prep.fadein_sec = static_cast<float>(config.fadeOutTime);
+
+    if (!pxtn->moo_preparation(&prep))
+      throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
     int written = 0;
     char *buf =
@@ -364,9 +372,28 @@ void convert(std::filesystem::path file) {
     sf_close(pcmFile);
   };
 
-  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
-             pxtn->master->get_beat_tempo() * 60,
-         newFilePath);
+  if (config.loopSeparately && pxtn->master->get_repeat_meas() > 0) {
+    std::filesystem::path loopPath = introPath;
+    loopPath.replace_filename(loopPath.filename().stem().string() + "_loop" +
+                              loopPath.extension().string());
+    introPath.replace_filename(introPath.filename().stem().string() + "_intro" +
+                               introPath.extension().string());
+
+    render(pxtn->master->get_repeat_meas(), 0, introPath.string());
+    render((pxtn->master->get_meas_num() - pxtn->master->get_repeat_meas()),
+           pxtn->master->get_repeat_meas(), loopPath.string());
+  } else {
+    if (config.loopSeparately && pxtn->master->get_repeat_meas() == 0)
+      logToConsole("The file " + file.filename().string() +
+                       " does not have a loop point. The project will be "
+                       "rendered as 1 file.",
+                   LogState::Warning);
+
+    render(pxtn->master->get_meas_num(), 0, introPath.string());
+  }
+  //  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
+  //             pxtn->master->get_beat_tempo() * 60,
+  //         introPath.string());
 
   //  int written = 0;
   //  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize +
