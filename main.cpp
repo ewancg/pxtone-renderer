@@ -332,23 +332,6 @@ void convert(std::filesystem::path file) {
     if (!pxtn->moo_preparation(&prep))
       throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
-    int written = 0;
-    char *buf =
-        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
-    buf[renderSize + 1] = '\0';
-
-    auto render = [&](int len) {
-      while (written < len) {
-        int mooedLength = 0;
-        if (!pxtn->Moo(buf, len - written, &mooedLength))
-          throw "Moo error during rendering. Bytes written so far: " +
-              std::to_string(written);
-
-        written += mooedLength;
-      }
-    };
-    render(renderSize);
-
     SNDFILE *pcmFile = sf_open(path.c_str(), SFM_WRITE, &info);
 
     if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
@@ -363,10 +346,29 @@ void convert(std::filesystem::path file) {
                   pxtn->text->get_comment_buf(nullptr));
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-    if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
-      throw GetError::file("Error writing complete audio buffer: wrote " +
-                           std::to_string(size) + " out of " +
-                           std::to_string(renderSize));
+    int written = 0;
+    char *buf =
+        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
+    buf[renderSize + 1] = '\0';
+
+    auto mooSection = [&](int len) {
+      while (written < len) {
+        int mooedLength = 0;
+        if (!pxtn->Moo(buf, len - written, &mooedLength))
+          throw "Moo error during rendering. Bytes written so far: " +
+              std::to_string(written);
+
+        written += mooedLength;
+      }
+    };
+    while (config.loopCount--) {
+      mooSection(renderSize);
+
+      if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
+        throw GetError::file("Error writing complete audio buffer: wrote " +
+                             std::to_string(size) + " out of " +
+                             std::to_string(renderSize));
+    }
 
     sf_write_sync(pcmFile);
     sf_close(pcmFile);
