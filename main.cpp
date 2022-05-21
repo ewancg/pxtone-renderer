@@ -193,14 +193,20 @@ bool parseArguments(const std::vector<std::string> &args) {
     if (compressionFound != argData.end())
       config.compressionRate = std::stod(compressionFound->second);
   }
-  for (auto it : argLoop.keyMatches) {
-    auto loopFound = argData.find(it);
-    if (loopFound != argData.end())
-      config.loopCount = std::stoi(loopFound->second);
-  }
   for (auto it : argLoopSeparately.keyMatches) {
     auto loopSeparatelyFound = argData.find(it);
     if (loopSeparatelyFound != argData.end()) config.loopSeparately = true;
+  }
+  for (auto it : argLoop.keyMatches) {
+    auto loopFound = argData.find(it);
+    if (loopFound != argData.end()) {
+      if (config.loopSeparately)
+        return logToConsole(
+            "A loop count can't be specified when rendering the loop "
+            "separately.");
+      if (config.loopSeparately)
+        config.loopCount = std::abs(std::stoi(loopFound->second));
+    }
   }
 
   std::filesystem::path path =
@@ -361,18 +367,23 @@ void convert(std::filesystem::path file) {
         written += mooedLength;
       }
     };
-    while (--config.loopCount) {
-      mooSection(renderSize);
+    if (config.loopCount)
+      for (int i = config.loopCount; i > 0; i--) {
+        mooSection(renderSize);
 
-      if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
-        throw GetError::file("Error writing complete audio buffer: wrote " +
-                             std::to_string(size) + " out of " +
-                             std::to_string(renderSize));
-    }
+        if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
+          throw GetError::file("Error writing complete audio buffer: wrote " +
+                               std::to_string(size) + " out of " +
+                               std::to_string(renderSize));
+      }
 
     sf_write_sync(pcmFile);
     sf_close(pcmFile);
   };
+
+  int lastMeasure = pxtn->master->get_meas_num();
+  if (pxtn->master->get_last_meas())
+    lastMeasure = pxtn->master->get_last_meas();
 
   if (config.loopSeparately && pxtn->master->get_repeat_meas() > 0) {
     std::filesystem::path loopPath = introPath;
@@ -382,16 +393,15 @@ void convert(std::filesystem::path file) {
                                introPath.extension().string());
 
     render(pxtn->master->get_repeat_meas(), 0, introPath.string());
-    render((pxtn->master->get_meas_num() - pxtn->master->get_repeat_meas()),
+    render((lastMeasure - pxtn->master->get_repeat_meas()),
            pxtn->master->get_repeat_meas(), loopPath.string());
   } else {
     if (config.loopSeparately && pxtn->master->get_repeat_meas() == 0)
-      logToConsole("The file " + file.filename().string() +
-                       " does not have a loop point. The project will be "
-                       "rendered as 1 file.",
+      logToConsole(file.filename().string() +
+                       " does not have a loop point. It will be "
+                       "rendered to one file.",
                    LogState::Warning);
-
-    render(pxtn->master->get_meas_num(), 0, introPath.string());
+    render(pxtn->master->get_last_meas(), 0, introPath.string());
   }
   //  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
   //             pxtn->master->get_beat_tempo() * 60,
@@ -425,8 +435,9 @@ void convert(std::filesystem::path file) {
   // custom logic below
 
   //  int halved = renderSize / 2;
-  //  //  short *z[halved];  //= static_cast<short
-  //  **>(malloc(renderSize)); for (int i = 0; i < halved; i++) {
+  //  short *z[halved];
+  //  = static_cast<short **>(malloc(renderSize));
+  //  for (int i = 0; i < halved; i++) {
   //    short s = (buf)[i * 2] << 8 | (buf)[(i * 2) + 1];
   //    //    short s = static_cast<short>(buf[i * 2]);
   //    sf_writef_short(pcmFile, &s, 1 /*halved*/);
