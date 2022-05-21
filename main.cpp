@@ -287,11 +287,14 @@ void convert(std::filesystem::path file) {
   if (!desc.set_memory_r(static_cast<void *>(data), static_cast<int>(size)))
     throw GetError::pxtone("Could not set pxtone memory blob of size " +
                            std::to_string(size));
+
   err = pxtn->read(&desc);
   if (err != pxtnOK) throw GetError::pxtone(err);
   err = pxtn->tones_ready();
   if (err != pxtnOK) throw GetError::pxtone(err);
 
+  //  pxtn->text->Comment_r(&desc); // not working rn ig
+  //  pxtn->text->Name_r(&desc);
   //  pxtnVOMITPREPARATION prep;
   //  prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
   //  prep.start_pos_sample = 0;
@@ -323,7 +326,7 @@ void convert(std::filesystem::path file) {
   }
 
   auto render = [&info, &pxtn](int measureCount, int startMeas,
-                               std::string path) {
+                               std::string path, bool loop) {
     int sampleCount =
         SAMPLE_RATE * (measureCount * pxtn->master->get_beat_num() /
                        pxtn->master->get_beat_tempo() * 60);
@@ -347,9 +350,6 @@ void convert(std::filesystem::path file) {
     sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
                sizeof(double));
 
-    sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
-    sf_set_string(pcmFile, SF_STR_COMMENT,
-                  pxtn->text->get_comment_buf(nullptr));
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
     int written = 0;
@@ -367,15 +367,23 @@ void convert(std::filesystem::path file) {
         written += mooedLength;
       }
     };
-    if (config.loopCount)
-      for (int i = config.loopCount; i > 0; i--) {
-        mooSection(renderSize);
+    int loopCount = loop ? config.loopCount : 1;
+    for (int i = loopCount; i > 0; i--) {
+      mooSection(renderSize);
+      short *shorts = reinterpret_cast<short *>(buf);
 
-        if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
-          throw GetError::file("Error writing complete audio buffer: wrote " +
-                               std::to_string(size) + " out of " +
-                               std::to_string(renderSize));
-      }
+      //      for (int i = renderSize / 2; i > 0; i--) std::cout << shorts[i] <<
+      //      " "; std::cout << std::endl; std::cout << &shorts << std::endl;
+      sf_write_short(pcmFile, shorts, renderSize / 2); /* != sampleCount)*/
+      //          throw GetError::file("Error writing complete audio buffer:
+      //          wrote " +
+      //                               std::to_string(size) + " out of " +
+      //                               std::to_string(renderSize));
+    }
+
+    sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
+    sf_set_string(pcmFile, SF_STR_COMMENT,
+                  pxtn->text->get_comment_buf(nullptr));
 
     sf_write_sync(pcmFile);
     sf_close(pcmFile);
@@ -392,16 +400,16 @@ void convert(std::filesystem::path file) {
     introPath.replace_filename(introPath.filename().stem().string() + "_intro" +
                                introPath.extension().string());
 
-    render(pxtn->master->get_repeat_meas(), 0, introPath.string());
+    render(pxtn->master->get_repeat_meas(), 0, introPath.string(), false);
     render((lastMeasure - pxtn->master->get_repeat_meas()),
-           pxtn->master->get_repeat_meas(), loopPath.string());
+           pxtn->master->get_repeat_meas(), loopPath.string(), true);
   } else {
     if (config.loopSeparately && pxtn->master->get_repeat_meas() == 0)
       logToConsole(file.filename().string() +
                        " does not have a loop point. It will be "
                        "rendered to one file.",
                    LogState::Warning);
-    render(pxtn->master->get_last_meas(), 0, introPath.string());
+    render(lastMeasure, 0, introPath.string(), true);
   }
   //  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
   //             pxtn->master->get_beat_tempo() * 60,

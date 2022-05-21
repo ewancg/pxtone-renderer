@@ -498,6 +498,7 @@ int32_t pxtnService::Moo(void* p_buf, int32_t size, int32_t* filled_size) {
       }
 
       for (int ch = 0; ch < _dst_ch_num; ch++, p16++) *p16 = sample[ch];
+      p_buf = p16;
     }
   }
   if (filled_size) *filled_size = smp_num * _dst_byte_per_smp;
@@ -508,7 +509,6 @@ int32_t pxtnService::Moo(void* p_buf, int32_t size, int32_t* filled_size) {
       _moo_b_end_vomit = true;
     }
   }
-
   return smp_w;
 }
 

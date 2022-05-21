@@ -56,7 +56,7 @@ add_executable(pxtone-renderer
 
 find_package(SndFile REQUIRED)
 find_package(Vorbis REQUIRED)
-find_package(Ogg REQUIRED)
+#find_package(Ogg REQUIRED)
 # find_package(FLAC REQUIRED)
 # Potentially add opus later -- it does not support conventional VBR/Compression levels
 
