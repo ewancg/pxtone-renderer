@@ -352,11 +352,11 @@ void convert(std::filesystem::path file) {
 
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-    int written = 0;
     char *buf =
         static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
     buf[renderSize + 1] = '\0';
 
+    int written = 0;
     auto mooSection = [&](int len) {
       while (written < len) {
         int mooedLength = 0;
@@ -367,6 +367,13 @@ void convert(std::filesystem::path file) {
         written += mooedLength;
       }
     };
+
+    //    auto mooSection = [&](int len) { vanilla moob
+    //      for (int i = 0; i < len; len++) {
+    //        if (!pxtn->Moo(buf, i)) throw "Moo error during rendering";
+    //      }
+    //    };
+
     int loopCount = loop ? config.loopCount : 1;
     for (int i = loopCount; i > 0; i--) {
       mooSection(renderSize);
