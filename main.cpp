@@ -368,7 +368,7 @@ void convert(std::filesystem::path file) {
       }
     };
 
-    //    auto mooSection = [&](int len) { vanilla moob
+    //    auto mooSection = [&](int len) { vanilla moo
     //      for (int i = 0; i < len; len++) {
     //        if (!pxtn->Moo(buf, i)) throw "Moo error during rendering";
     //      }
