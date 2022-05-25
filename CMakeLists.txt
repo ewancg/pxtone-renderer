@@ -55,7 +55,7 @@ add_executable(pxtone-renderer
 find_package(Ogg)
 find_package(Vorbis)
 find_package(FLAC)
-find_package(SndFile)
+find_package(SndFile) # cmake file not provided -- it comes with the library
 
 # Potentially add opus later -- it does not support conventional VBR/Compression levels
 

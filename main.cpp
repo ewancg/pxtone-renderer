@@ -368,24 +368,11 @@ void convert(std::filesystem::path file) {
       }
     };
 
-    //    auto mooSection = [&](int len) { vanilla moo
-    //      for (int i = 0; i < len; len++) {
-    //        if (!pxtn->Moo(buf, i)) throw "Moo error during rendering";
-    //      }
-    //    };
-
     int loopCount = loop ? config.loopCount : 1;
     for (int i = loopCount; i > 0; i--) {
       mooSection(renderSize);
       short *shorts = reinterpret_cast<short *>(buf);
-
-      //      for (int i = renderSize / 2; i > 0; i--) std::cout << shorts[i] <<
-      //      " "; std::cout << std::endl; std::cout << &shorts << std::endl;
-      sf_write_short(pcmFile, shorts, renderSize / 2); /* != sampleCount)*/
-      //          throw GetError::file("Error writing complete audio buffer:
-      //          wrote " +
-      //                               std::to_string(size) + " out of " +
-      //                               std::to_string(renderSize));
+      sf_write_short(pcmFile, shorts, renderSize / 2);
     }
 
     sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
