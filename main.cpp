@@ -332,7 +332,7 @@ void convert(std::filesystem::path file) {
                        pxtn->master->get_beat_tempo() * 60);
     int renderSize = sampleCount * CHANNEL_COUNT * 16 / 8;
 
-    pxtnVOMITPREPARATION prep;
+    pxtnVOMITPREPARATION prep = {};
     prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
     prep.start_pos_meas = startMeas;
     prep.master_volume = 0.8f;  // this is probably good

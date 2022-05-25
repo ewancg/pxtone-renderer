@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+﻿cmake_minimum_required(VERSION 3.5)
 include(FetchContent)
 
 project(pxtone-renderer LANGUAGES CXX)
@@ -57,11 +57,13 @@ set(BUILD_PROGRAMS OFF)
 set(BUILD_TESTING OFF)
 set(BUILD_EXAMPLES OFF)
 set(BUILD_DOCS OFF)
+
+set(BUILD_CXXLIBS OFF)
 set(INSTALL_MANPAGES OFF)
 
 find_package(Ogg)
 if( NOT OGG_FOUND)
-    message(STATUS "libOgg not found on system -- downloading local version.")
+    message(STATUS "Ogg not found on system -- downloading local version.")
     FetchContent_Declare(
 	Ogg
 	GIT_REPOSITORY https://github.com/xiph/ogg.git
@@ -73,7 +75,7 @@ endif()
 set(VorbisfileName "Vorbis::vorbisfile")
 find_package(Vorbis)
 if( NOT VORBIS_FOUND)
-    message(STATUS "libVorbis not found on system -- downloading local version.")
+    message(STATUS "Vorbis not found on system -- downloading local version.")
     FetchContent_Declare(
 	Vorbis
 	GIT_REPOSITORY https://gitlab.xiph.org/xiph/vorbis.git
@@ -86,7 +88,7 @@ endif()
 
 find_package(FLAC)
 if( NOT FLAC_FOUND )
-    message(STATUS "libFLAC not found on system -- downloading local version.")
+    message(STATUS "FLAC not found on system -- downloading local version.")
     FetchContent_Declare(
 	FLAC
 	GIT_REPOSITORY https://github.com/xiph/flac.git # mirror
@@ -95,17 +97,18 @@ if( NOT FLAC_FOUND )
     FetchContent_MakeAvailable(FLAC)
 endif()
 
-find_package(SndFile)
-if( NOT SndFile_FOUND )
-    message(STATUS "libSndFile not found on system -- downloading local version.")
+set(SndFileName LIBSNDFILE_LIBRARIES)
+#find_package(LibSndfile)
+if( NOT LIBSNDFILE_FOUND )
+    message(STATUS "libsndfile not found on system -- downloading local version.")
     FetchContent_Declare(
 	SndFile
 	GIT_REPOSITORY https://github.com/libsndfile/libsndfile.git
 	GIT_TAG        ea3ac90e98c6a98cd52cae39010446fba368a2e3 # 1.1.0
     )
-
     # set(ENABLE_MPEG ON)
     FetchContent_MakeAvailable(SndFile)
+    set(SndFileName "SndFile::sndfile") # ugh
 endif()
 
 # Potentially add opus later -- it does not support conventional VBR/Compression levels

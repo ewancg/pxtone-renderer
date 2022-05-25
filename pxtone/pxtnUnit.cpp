@@ -173,7 +173,7 @@ void pxtnUnit::Tone_Sample(bool b_mute_by_unit, int32_t ch_num,
       int32_t work = 0;
 
       if (p_vt->life_count > 0) {
-        printf("%d\n", p_vt->life_count);
+        //        printf("%d\n", p_vt->life_count);
         int32_t pos = (int32_t)p_vt->smp_pos * 4 + ch * 2;
         work += *((short *)&p_vi->p_smp_w[pos]);
 
@@ -234,7 +234,7 @@ void pxtnUnit::Tone_Increment_Sample(float freq) {
 
     if (p_vt->life_count > 0) p_vt->life_count--;
     if (p_vt->life_count > 0) {
-      printf("%s, %d\n", "decrementing baby", p_vt->life_count);
+      //      printf("%s, %d\n", "decrementing baby", p_vt->life_count);
       p_vt->on_count--;
 
       p_vt->smp_pos += p_vt->offset_freq * _v_TUNING * freq;
