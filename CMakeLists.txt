@@ -1,5 +1,4 @@
 ﻿cmake_minimum_required(VERSION 3.5)
-include(FetchContent)
 
 project(pxtone-renderer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -53,64 +52,11 @@ add_executable(pxtone-renderer
     pxtone/pxtoneNoise.h
 )
 
-set(BUILD_PROGRAMS OFF)
-set(BUILD_TESTING OFF)
-set(BUILD_EXAMPLES OFF)
-set(BUILD_DOCS OFF)
-
-set(BUILD_CXXLIBS OFF)
-set(INSTALL_MANPAGES OFF)
-
 find_package(Ogg)
-if( NOT OGG_FOUND)
-    message(STATUS "Ogg not found on system -- downloading local version.")
-    FetchContent_Declare(
-	Ogg
-	GIT_REPOSITORY https://github.com/xiph/ogg.git
-	GIT_TAG        e1774cd77f471443541596e09078e78fdc342e4f # 1.3.5
-    )
-    FetchContent_MakeAvailable(Ogg)
-endif()
-
-set(VorbisfileName "Vorbis::vorbisfile")
 find_package(Vorbis)
-if( NOT VORBIS_FOUND)
-    message(STATUS "Vorbis not found on system -- downloading local version.")
-    FetchContent_Declare(
-	Vorbis
-	GIT_REPOSITORY https://gitlab.xiph.org/xiph/vorbis.git
-	GIT_TAG        0657aee69dec8508a0011f47f3b69d7538e9d262 # 1.3.7
-    )
-    FetchContent_MakeAvailable(Vorbis)
-    set(VorbisfileName "vorbisfile") # ugh
-endif()
-
-
 find_package(FLAC)
-if( NOT FLAC_FOUND )
-    message(STATUS "FLAC not found on system -- downloading local version.")
-    FetchContent_Declare(
-	FLAC
-	GIT_REPOSITORY https://github.com/xiph/flac.git # mirror
-	GIT_TAG        1151c93e992bb8c7c6394e04aa880d711c531c7f # 1.3.4
-    )
-    FetchContent_MakeAvailable(FLAC)
-endif()
-
-set(SndFileName LIBSNDFILE_LIBRARIES)
-#find_package(LibSndfile)
-if( NOT LIBSNDFILE_FOUND )
-    message(STATUS "libsndfile not found on system -- downloading local version.")
-    FetchContent_Declare(
-	SndFile
-	GIT_REPOSITORY https://github.com/libsndfile/libsndfile.git
-	GIT_TAG        ea3ac90e98c6a98cd52cae39010446fba368a2e3 # 1.1.0
-    )
-    # set(ENABLE_MPEG ON)
-    FetchContent_MakeAvailable(SndFile)
-    set(SndFileName "SndFile::sndfile") # ugh
-endif()
+find_package(SndFile)
 
 # Potentially add opus later -- it does not support conventional VBR/Compression levels
 
-target_link_libraries(pxtone-renderer PRIVATE SndFile::sndfile ${VorbisfileName} FLAC::FLAC)
+target_link_libraries(pxtone-renderer PRIVATE SndFile::sndfile Vorbis::vorbisfile FLAC::FLAC)
