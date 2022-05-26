@@ -97,19 +97,20 @@ struct KnownArg {
   bool takesParameter = false;
 };
 
-static const KnownArg argFormat = {{"--format", "-f"}, true},
-                      argVbr{{"--vbr", "-v"}, true},
-                      argCompression{{"--compression", "-c"}, true},
-                      //
+static const KnownArg
+    argFormat = {{"--format", "-f"}, true},
+    //                      argVbr{{"--vbr", "-v"}, true},
+    //                      argCompression{{"--compression", "-c"}, true},
+    //
     argOutput = {{"--output", "-o"}, true}, argHelp = {{"--help", "-h"}},
-                      argQuiet{{"--quiet", "-q"}},
-                      argFadeOut{{"--fadeout"}, true},
-                      argLoop{{"--loop", "-l"}, true},
-                      argLoopSeparately{{"--loop-separately"}};
+    argQuiet{{"--quiet", "-q"}}, argFadeOut{{"--fadeout"}, true},
+    argLoop{{"--loop", "-l"}, true}, argLoopSeparately{{"--loop-separately"}};
 
 static const std::vector<KnownArg> knownArguments = {
-    argFormat, argVbr,     argCompression, argOutput,        argHelp,
-    argQuiet,  argFadeOut, argLoop,        argLoopSeparately};
+    argFormat,        /*argVbr,     argCompression, */ argOutput,
+    argHelp,          argQuiet,
+    argFadeOut,       argLoop,
+    argLoopSeparately};
 
 KnownArg findArgument(const std::string &key) {
   KnownArg match;
