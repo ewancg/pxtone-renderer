@@ -21,7 +21,7 @@ constexpr char usage[] =
     "  --format, -f        [OGG, WAV, FLAC]    Encode data to this format.\n"
 //    "  --vbr, -v           [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
 //    "  --compression, -c   [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
-    "  --fadeout           [seconds]           Specify song fadeout time.\n"
+    "  --fadein            [seconds]           Specify song fade in time.\n"
     "  --loop, -l          Loop the song this many times.\n"
     "  --loop-separately   Separate the song into 'intro' and 'loop' files.\n"
     "\n"
@@ -310,8 +310,7 @@ void convert(std::filesystem::path file) {
     prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
     prep.start_pos_meas = startMeas;
     prep.master_volume = 0.8f;  // this is probably good
-    prep.fadein_sec = static_cast<float>(config.fadeOutTime);
-
+    prep.fadein_sec = loop ? 0 : static_cast<float>(config.fadeOutTime);
     if (!pxtn->moo_preparation(&prep))
       throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
