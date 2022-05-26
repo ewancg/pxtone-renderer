@@ -349,7 +349,6 @@ void convert(std::filesystem::path file) {
     for (int i = loopCount; i > 0; i--) {
       mooSection(renderSize);
       sf_write_short(pcmFile, buf, renderSize / 2);
-      //      short *shorts = reinterpret_cast<short *>(buf);
     }
   };
 
@@ -358,33 +357,27 @@ void convert(std::filesystem::path file) {
     lastMeasure = pxtn->master->get_last_meas();
 
   SNDFILE *introFile;
-  if (config.loopSeparately && pxtn->master->get_repeat_meas() > 0) {
+  SNDFILE *loopFile;
+
+  if (config.loopSeparately) {
     std::filesystem::path loopPath = introPath;
-    loopPath.replace_filename(loopPath.filename().stem().string() + "_loop" +
-                              loopPath.extension().string());
     introPath.replace_filename(introPath.filename().stem().string() + "_intro" +
                                introPath.extension().string());
+    loopPath.replace_filename(loopPath.filename().stem().string() + "_loop" +
+                              loopPath.extension().string());
 
     introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
-    SNDFILE *loopFile = sf_open(loopPath.c_str(), SFM_WRITE, &info);
-
-    render(pxtn->master->get_repeat_meas(), 0, introFile, false);
-    render((lastMeasure - pxtn->master->get_repeat_meas()),
-           pxtn->master->get_last_meas(), loopFile, true);
-    finalize(loopFile);
+    loopFile = sf_open(loopPath.c_str(), SFM_WRITE, &info);
   } else {
-    if (config.loopSeparately && pxtn->master->get_repeat_meas() == 0)
-      logToConsole(file.filename().string() +
-                       " does not have a loop point. It will be "
-                       "rendered to one file.",
-                   LogState::Warning);
     introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
-
-    render(pxtn->master->get_repeat_meas(), 0, introFile, false);
-    render(lastMeasure - pxtn->master->get_repeat_meas(),
-           pxtn->master->get_repeat_meas(), introFile, true);
+    loopFile = introFile;
   }
+
+  render(pxtn->master->get_repeat_meas(), 0, introFile, false);
+  render((lastMeasure - pxtn->master->get_repeat_meas()),
+         pxtn->master->get_last_meas(), loopFile, true);
   finalize(introFile);
+  finalize(loopFile);
 
   pxtn->evels->Release();
 }
