@@ -30,7 +30,7 @@ CMake must be able to find all the libraries within its search paths.
 After the prerequisites are met, the following should be fine:
 
 `cmake -B ./build -S ./ && cmake --build ./build`
-	
+
 ## Thanks
  - Sidedishes; testing
  - Clownacy; bugfixes in pxtone
