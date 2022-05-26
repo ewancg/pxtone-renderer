@@ -24,7 +24,8 @@ Options:
  - Vorbis
  - FLAC
  - libsndfile
-	
+
+No C++ bindings required for any of the libraries
 ## Building
 CMake must be able to find all the libraries within its search paths.
 After the prerequisites are met, the following should be fine:
