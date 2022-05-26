@@ -34,8 +34,10 @@ After the prerequisites are met, the following should be fine:
 
 ## Thanks
  - Sidedishes; testing
- - Clownacy; bugfixes in pxtone
+ - Clownacy; bugfixes in pxtone, testing
+ - SlightlyIntelligentMonkey; testing
  - Xiph.org; Ogg, Vorbis and FLAC
+ - Studio Pixel; pxtone
  - libsndfile guys
 
 
