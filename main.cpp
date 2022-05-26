@@ -159,6 +159,10 @@ bool parseArguments(const std::vector<std::string> &args) {
     waitingForSecond = true;
     argData.insert(arg);
   }
+  for (auto it : argHelp.keyMatches) {
+    auto helpFound = argData.find(it);
+    if (helpFound != argData.end()) return help();
+  }
   switch (files.size()) {
     case 0:
       return logToConsole("At least 1 .ptcop file is required.");
@@ -167,10 +171,6 @@ bool parseArguments(const std::vector<std::string> &args) {
       break;
     default:
       config.singleFile = false;
-  }
-  for (auto it : argHelp.keyMatches) {
-    auto helpFound = argData.find(it);
-    if (helpFound != argData.end()) return help();
   }
   for (auto it : argFadeOut.keyMatches) {
     auto fadeOutFound = argData.find(it);
