@@ -53,7 +53,6 @@ struct Config {
     FLAC = SF_FORMAT_FLAC | SF_FORMAT_PCM_16
   };
   Format format = WAV;
-  //  bool toStdout = false;
   int loopCount = 1;
   bool loopSeparately = false, quiet = true, singleFile = true,
        outputToDirectory = false;
@@ -68,7 +67,6 @@ bool help() {
   return false;
 }
 bool logToConsole(std::string text, LogState warning = Error) {
-  //  if (config.toStdout) return false;
   std::string str;
   if (warning == Error)
     str += "Error: ";
@@ -102,7 +100,7 @@ struct KnownArg {
 static const KnownArg argFormat = {{"--format", "-f"}, true},
                       argVbr{{"--vbr", "-v"}, true},
                       argCompression{{"--compression", "-c"}, true},
-                      //                      argStdout = {{"--stdout"}},
+                      //
     argOutput = {{"--output", "-o"}, true}, argHelp = {{"--help", "-h"}},
                       argQuiet{{"--quiet", "-q"}},
                       argFadeOut{{"--fadeout"}, true},
@@ -110,7 +108,7 @@ static const KnownArg argFormat = {{"--format", "-f"}, true},
                       argLoopSeparately{{"--loop-separately"}};
 
 static const std::vector<KnownArg> knownArguments = {
-    argFormat, argVbr,     argCompression, /*argStdout,*/ argOutput, argHelp,
+    argFormat, argVbr,     argCompression, argOutput,        argHelp,
     argQuiet,  argFadeOut, argLoop,        argLoopSeparately};
 
 KnownArg findArgument(const std::string &key) {
@@ -124,7 +122,6 @@ KnownArg findArgument(const std::string &key) {
 
 static std::set<std::filesystem::path> files;
 bool parseArguments(const std::vector<std::string> &args) {
-  //  for (auto it : args) std::cout << "'" << it << "'" << std::endl;
   std::map<std::string, std::string> argData;
 
   bool waitingForSecond = true;
@@ -204,7 +201,7 @@ bool parseArguments(const std::vector<std::string> &args) {
         return logToConsole(
             "A loop count can't be specified when rendering the loop "
             "separately.");
-      if (config.loopSeparately)
+      else
         config.loopCount = std::abs(std::stoi(loopFound->second));
     }
   }
@@ -221,18 +218,6 @@ bool parseArguments(const std::vector<std::string> &args) {
   if (config.singleFile && !config.outputToDirectory)
     config.fileName = path.filename().string();
   config.outputDirectory = std::filesystem::absolute(path);
-
-  //  for (auto it : argStdout.keyMatches) {
-  //    auto stdoutFound = argData.find(it);
-  //    if (stdoutFound != argData.end()) {
-  //      if (!config.singleFile)
-  //        return logToConsole(
-  //            "Standard output cannot be used when rendering multiple
-  //            files.");
-  //      else
-  //        config.toStdout = true;
-  //    }
-  //  }
 
   for (auto it : argFormat.keyMatches) {
     auto formatFound = argData.find(it);
@@ -293,17 +278,6 @@ void convert(std::filesystem::path file) {
   err = pxtn->tones_ready();
   if (err != pxtnOK) throw GetError::pxtone(err);
 
-  //  pxtn->text->Comment_r(&desc); // not working rn ig
-  //  pxtn->text->Name_r(&desc);
-  //  pxtnVOMITPREPARATION prep;
-  //  prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
-  //  prep.start_pos_sample = 0;
-  //  prep.master_volume = 0.8f;  // this is probably good
-  //  prep.fadein_sec = static_cast<float>(config.fadeOutTime);
-
-  //  if (!pxtn->moo_preparation(&prep))
-  //    throw GetError::pxtone("I Have No Mouth, and I Must Moo");
-
   SF_INFO info;
   info.samplerate = SAMPLE_RATE;
   info.channels = CHANNEL_COUNT;
@@ -325,8 +299,12 @@ void convert(std::filesystem::path file) {
           "/" + file.filename().replace_extension(config.formatSuffix).string();
   }
 
-  auto render = [&info, &pxtn](int measureCount, int startMeas,
-                               std::string path, bool loop) {
+  auto finalize = [](SNDFILE *pcmFile) {
+    sf_write_sync(pcmFile);
+    sf_close(pcmFile);
+  };
+  auto render = [&pxtn](int measureCount, int startMeas, SNDFILE *pcmFile,
+                        bool loop) {
     int sampleCount =
         SAMPLE_RATE * (measureCount * pxtn->master->get_beat_num() /
                        pxtn->master->get_beat_tempo() * 60);
@@ -341,20 +319,19 @@ void convert(std::filesystem::path file) {
     if (!pxtn->moo_preparation(&prep))
       throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
-    SNDFILE *pcmFile = sf_open(path.c_str(), SFM_WRITE, &info);
-
     if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
     sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &config.compressionRate,
                sizeof(double));
     sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
                sizeof(double));
-
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-    char *buf =
-        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
-    buf[renderSize + 1] = '\0';
+    short *buf = static_cast<short *>(malloc(static_cast<size_t>(renderSize)));
+
+    //    char *buf =
+    //        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
+    //    buf[renderSize + 1] = '\0';
 
     int written = 0;
     auto mooSection = [&](int len) {
@@ -371,22 +348,16 @@ void convert(std::filesystem::path file) {
     int loopCount = loop ? config.loopCount : 1;
     for (int i = loopCount; i > 0; i--) {
       mooSection(renderSize);
-      short *shorts = reinterpret_cast<short *>(buf);
-      sf_write_short(pcmFile, shorts, renderSize / 2);
+      sf_write_short(pcmFile, buf, renderSize / 2);
+      //      short *shorts = reinterpret_cast<short *>(buf);
     }
-
-    sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
-    sf_set_string(pcmFile, SF_STR_COMMENT,
-                  pxtn->text->get_comment_buf(nullptr));
-
-    sf_write_sync(pcmFile);
-    sf_close(pcmFile);
   };
 
   int lastMeasure = pxtn->master->get_meas_num();
   if (pxtn->master->get_last_meas())
     lastMeasure = pxtn->master->get_last_meas();
 
+  SNDFILE *introFile;
   if (config.loopSeparately && pxtn->master->get_repeat_meas() > 0) {
     std::filesystem::path loopPath = introPath;
     loopPath.replace_filename(loopPath.filename().stem().string() + "_loop" +
@@ -394,58 +365,26 @@ void convert(std::filesystem::path file) {
     introPath.replace_filename(introPath.filename().stem().string() + "_intro" +
                                introPath.extension().string());
 
-    render(pxtn->master->get_repeat_meas(), 0, introPath.string(), false);
+    introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
+    SNDFILE *loopFile = sf_open(loopPath.c_str(), SFM_WRITE, &info);
+
+    render(pxtn->master->get_repeat_meas(), 0, introFile, false);
     render((lastMeasure - pxtn->master->get_repeat_meas()),
-           pxtn->master->get_repeat_meas(), loopPath.string(), true);
+           pxtn->master->get_last_meas(), loopFile, true);
+    finalize(loopFile);
   } else {
     if (config.loopSeparately && pxtn->master->get_repeat_meas() == 0)
       logToConsole(file.filename().string() +
                        " does not have a loop point. It will be "
                        "rendered to one file.",
                    LogState::Warning);
-    render(lastMeasure, 0, introPath.string(), true);
+    introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
+
+    render(pxtn->master->get_repeat_meas(), 0, introFile, false);
+    render(lastMeasure - pxtn->master->get_repeat_meas(),
+           pxtn->master->get_repeat_meas(), introFile, true);
   }
-  //  render(pxtn->master->get_repeat_meas() * pxtn->master->get_beat_num() /
-  //             pxtn->master->get_beat_tempo() * 60,
-  //         introPath.string());
-
-  //  int written = 0;
-  //  char *buf = static_cast<char *>(malloc(static_cast<size_t>(renderSize +
-  //  1))); buf[renderSize + 1] = '\0'; auto render = [&](int len) {
-  //    while (written < len) {
-  //      int mooedLength = 0;
-  //      if (!pxtn->Moo(buf, len - written, &mooedLength))
-  //        throw "Moo error during rendering. Bytes written so far: " +
-  //            std::to_string(written);
-
-  //      written += mooedLength;
-  //    }
-  //  };
-  //  render(renderSize);
-
-  //  sf_set_string(pcmFile, SF_STR_TITLE, pxtn->text->get_name_buf(nullptr));
-  //  sf_set_string(pcmFile, SF_STR_COMMENT,
-  //  pxtn->text->get_comment_buf(nullptr)); sf_command(pcmFile,
-  //  SFC_UPDATE_HEADER_NOW, nullptr, 0);
-
-  //  if (int size = sf_write_raw(pcmFile, buf, renderSize) != renderSize)
-  //    throw GetError::file("Error writing complete audio buffer: wrote " +
-  //                         std::to_string(size) + " out of " +
-  //                         std::to_string(renderSize));
-  // i'm not supposed to use write_raw; even though it works i think it
-  // might only be for wav, ogg/flac don't support? write ints instead:
-  // custom logic below
-
-  //  int halved = renderSize / 2;
-  //  short *z[halved];
-  //  = static_cast<short **>(malloc(renderSize));
-  //  for (int i = 0; i < halved; i++) {
-  //    short s = (buf)[i * 2] << 8 | (buf)[(i * 2) + 1];
-  //    //    short s = static_cast<short>(buf[i * 2]);
-  //    sf_writef_short(pcmFile, &s, 1 /*halved*/);
-  //    //    z[i] = &s;
-  //  }
-  // this code does not work right now; when it does work it creates empty files
+  finalize(introFile);
 
   pxtn->evels->Release();
 }
@@ -454,13 +393,6 @@ int main(int argc, char *argv[]) {
   if (argc <= 1) return logToConsole("Expected at least 1 parameter.");
 
   std::vector<std::string> args;
-  //  for (int i = 1; i < argc; i++) {
-  //    std::string str = argv[i];
-  //    std::replace(str.begin(), str.end(), '=', ' ');
-  //    std::stringstream ss(str);
-  //    while (getline(ss, str, ' ')) args.push_back(str);
-  //  }
-
   std::string str;
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
@@ -495,10 +427,10 @@ int main(int argc, char *argv[]) {
 }
 
 /* TODO:
- *  figure out why it makes empty files -- i think it is not mooing
- *
  *  make it do intro & loop sections separately
  *  add loop count
+ *
+ *  maybe add metadata
  *
  *  remove arg parsing boilerplate
  *
