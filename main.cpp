@@ -19,11 +19,11 @@ constexpr char usage[] =
     "By default, the provided files will be rendered as .wav to your working directory.\n"
     "Options:\n"
     "  --format, -f        [OGG, WAV, FLAC]    Encode data to this format.\n"
-    "  --vbr, -v           [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
-    "  --compression, -c   [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
+//    "  --vbr, -v           [0.0 - 1.0]         FLAC/OGG only; Set VBR quality.\n"
+//    "  --compression, -c   [0.0 - 1.0]         FLAC/OGG only; Set compression level.\n"
     "  --fadeout           [seconds]           Specify song fadeout time.\n"
     "  --loop, -l          Loop the song this many times.\n"
-    "  --loop-separately   Separate the song into 'intro' and 'loop' files. Can't be used with -l.\n"
+    "  --loop-separately   Separate the song into 'intro' and 'loop' files.\n"
     "\n"
     "  --output, -o   If 1 file is being rendered, place the resulting file here.\n"
     "                 If multiple are being rendered, put them in this directory.\n"
@@ -56,7 +56,7 @@ struct Config {
   int loopCount = 1;
   bool loopSeparately = false, quiet = true, singleFile = true,
        outputToDirectory = false;
-  double fadeOutTime = 0, vbrRate = 0, compressionRate = 0;
+  double fadeOutTime = 0 /*, vbrRate = 0, compressionRate = 0*/;
   std::string formatSuffix = "wav", fileName;
   std::filesystem::path outputDirectory;
 } static config;
@@ -181,15 +181,16 @@ bool parseArguments(const std::vector<std::string> &args) {
     auto quietFound = argData.find(it);
     if (quietFound == argData.end()) config.quiet = false;
   }
-  for (auto it : argVbr.keyMatches) {
-    auto vbrFound = argData.find(it);
-    if (vbrFound != argData.end()) config.vbrRate = std::stod(vbrFound->second);
-  }
-  for (auto it : argCompression.keyMatches) {
-    auto compressionFound = argData.find(it);
-    if (compressionFound != argData.end())
-      config.compressionRate = std::stod(compressionFound->second);
-  }
+  //  for (auto it : argVbr.keyMatches) {
+  //    auto vbrFound = argData.find(it);
+  //    if (vbrFound != argData.end()) config.vbrRate =
+  //    std::stod(vbrFound->second);
+  //  }
+  //  for (auto it : argCompression.keyMatches) {
+  //    auto compressionFound = argData.find(it);
+  //    if (compressionFound != argData.end())
+  //      config.compressionRate = std::stod(compressionFound->second);
+  //  }
   for (auto it : argLoopSeparately.keyMatches) {
     auto loopSeparatelyFound = argData.find(it);
     if (loopSeparatelyFound != argData.end()) config.loopSeparately = true;
@@ -197,12 +198,7 @@ bool parseArguments(const std::vector<std::string> &args) {
   for (auto it : argLoop.keyMatches) {
     auto loopFound = argData.find(it);
     if (loopFound != argData.end()) {
-      if (config.loopSeparately)
-        return logToConsole(
-            "A loop count can't be specified when rendering the loop "
-            "separately.");
-      else
-        config.loopCount = std::abs(std::stoi(loopFound->second));
+      config.loopCount = std::abs(std::stoi(loopFound->second));
     }
   }
 
@@ -321,10 +317,11 @@ void convert(std::filesystem::path file) {
 
     if (pcmFile == nullptr) throw GetError::encoder(pcmFile);
 
-    sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL, &config.compressionRate,
-               sizeof(double));
-    sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
-               sizeof(double));
+    //    sf_command(pcmFile, SFC_SET_COMPRESSION_LEVEL,
+    //    &config.compressionRate,
+    //               sizeof(double));
+    //    sf_command(pcmFile, SFC_SET_VBR_ENCODING_QUALITY, &config.vbrRate,
+    //               sizeof(double));
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
     short *buf = static_cast<short *>(malloc(static_cast<size_t>(renderSize)));
@@ -420,8 +417,7 @@ int main(int argc, char *argv[]) {
 }
 
 /* TODO:
- *  make it do intro & loop sections separately
- *  add loop count
+ *  get compression level working
  *
  *  maybe add metadata
  *
