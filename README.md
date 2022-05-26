@@ -17,6 +17,23 @@ Options:
   --quiet, -q    Omit info & warning messages from console output.
 ```
 
-Requires C++17 and CMake. libogg/vorbis by xiph.org, pxtone by Studio Pixel, bugfixes by Clownacy
+### Requirements:
+	- C++17
+	- CMake
+	- Ogg
+	- Vorbis
+	- FLAC
+	- libsndfile
 
-on msys please use Unix Makefiles (-G)
+### Building
+	CMake must be able to find all the libraries within its search paths.
+	After the prerequisites are met, the following should be fine
+	`cmake -B ./build -S ./ && cmake --build ./build`
+
+### Thanks
+	- Sidedishes; testing
+	- Clownacy; bugfixes in pxtone
+	- Xiph.org; Ogg, Vorbis and FLAC
+	- libsndfile guys
+
+
