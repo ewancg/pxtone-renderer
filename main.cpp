@@ -13,6 +13,12 @@
 #define SAMPLE_RATE 48000
 #define CHANNEL_COUNT 2
 
+#ifdef _WIN32
+#define PLATFORM_SF_OPEN(a, b, c) sf_wchar_open(a, b, c)
+#elif
+#define PLATFORM_SF_OPEN(a, b, c) sf_open(a, b, c)
+#endif
+
 // clang-format off
 constexpr char usage[] =
     "Usage: pxtone-decoder [options] file(s)...\n"
@@ -56,7 +62,7 @@ struct Config {
   int loopCount = 1;
   bool loopSeparately = false, quiet = true, singleFile = true,
        outputToDirectory = false;
-  double fadeOutTime = 0 /*, vbrRate = 0, compressionRate = 0*/;
+  double fadeInTime = 0 /*, vbrRate = 0, compressionRate = 0*/;
   std::string formatSuffix = "wav", fileName;
   std::filesystem::path outputDirectory;
 } static config;
@@ -103,13 +109,13 @@ static const KnownArg
     //                      argCompression{{"--compression", "-c"}, true},
     //
     argOutput = {{"--output", "-o"}, true}, argHelp = {{"--help", "-h"}},
-    argQuiet{{"--quiet", "-q"}}, argFadeOut{{"--fadeout"}, true},
+    argQuiet{{"--quiet", "-q"}}, argFadeIn{{"--fadein"}, true},
     argLoop{{"--loop", "-l"}, true}, argLoopSeparately{{"--loop-separately"}};
 
 static const std::vector<KnownArg> knownArguments = {
     argFormat,        /*argVbr,     argCompression, */ argOutput,
     argHelp,          argQuiet,
-    argFadeOut,       argLoop,
+    argFadeIn,        argLoop,
     argLoopSeparately};
 
 KnownArg findArgument(const std::string &key) {
@@ -173,10 +179,10 @@ bool parseArguments(const std::vector<std::string> &args) {
     default:
       config.singleFile = false;
   }
-  for (auto it : argFadeOut.keyMatches) {
-    auto fadeOutFound = argData.find(it);
-    if (fadeOutFound != argData.end())
-      config.fadeOutTime = std::stod(fadeOutFound->second);
+  for (auto it : argFadeIn.keyMatches) {
+    auto fadeInFound = argData.find(it);
+    if (fadeInFound != argData.end())
+      config.fadeInTime = std::stod(fadeInFound->second);
   }
   for (auto it : argQuiet.keyMatches) {
     auto quietFound = argData.find(it);
@@ -311,7 +317,7 @@ void convert(std::filesystem::path file) {
     prep.flags |= pxtnVOMITPREPFLAG_loop;  // TODO: figure this out
     prep.start_pos_meas = startMeas;
     prep.master_volume = 0.8f;  // this is probably good
-    prep.fadein_sec = loop ? 0 : static_cast<float>(config.fadeOutTime);
+    prep.fadein_sec = loop ? 0 : static_cast<float>(config.fadeInTime);
     if (!pxtn->moo_preparation(&prep))
       throw GetError::pxtone("I Have No Mouth, and I Must Moo");
 
@@ -363,10 +369,10 @@ void convert(std::filesystem::path file) {
     loopPath.replace_filename(loopPath.filename().stem().string() + "_loop" +
                               loopPath.extension().string());
 
-    introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
-    loopFile = sf_open(loopPath.c_str(), SFM_WRITE, &info);
+    introFile = PLATFORM_SF_OPEN(introPath.c_str(), SFM_WRITE, &info);
+    loopFile = PLATFORM_SF_OPEN(loopPath.c_str(), SFM_WRITE, &info);
   } else {
-    introFile = sf_open(introPath.c_str(), SFM_WRITE, &info);
+    introFile = PLATFORM_SF_OPEN(introPath.c_str(), SFM_WRITE, &info);
     loopFile = introFile;
   }
 
