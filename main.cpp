@@ -15,7 +15,7 @@
 
 #ifdef _WIN32
 #define PLATFORM_SF_OPEN(a, b, c) sf_wchar_open(a, b, c)
-#elif
+#else
 #define PLATFORM_SF_OPEN(a, b, c) sf_open(a, b, c)
 #endif
 
