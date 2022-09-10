@@ -279,17 +279,9 @@ void convert(std::filesystem::path file) {
   if (fp == nullptr)
     throw GetError::file("Error opening file " + file.string() +
                          ". The file may not be readable to your user.");
-  // fseek(fp, 0L, SEEK_END);
-  // size_t size = static_cast<size_t>(ftell(fp));
-  // unsigned char *data = static_cast<unsigned char *>(malloc(size));
-  // if (data == nullptr)
-  //   throw GetError::generic("Error allocating " + std::to_string(size) +
-  //                           " bytes.");
-  // rewind(fp);
-  // if (fread(data, 1, size, fp) != size)
-  //   throw GetError::file("Bytes read does not match file size.");
-  // fclose(fp);
 
+  // thanks to pxtone update 220910a, we can get rid of pxtnDescriptor entirely
+  // & just implement I/O callbacks
   pxtnService *pxtn = new pxtnService(ioRead, ioWrite, ioSeek, ioTell);
 
   auto err = pxtn->init();
@@ -298,12 +290,6 @@ void convert(std::filesystem::path file) {
     throw GetError::pxtone(
         "Could not set destination quality: " + std::to_string(CHANNEL_COUNT) +
         " channels, " + std::to_string(SAMPLE_RATE) + "Hz.");
-
-  // pxtnData desc;
-
-  // if (!desc.set_memory_r(static_cast<void *>(data), static_cast<int>(size)))
-  //   throw GetError::pxtone("Could not set pxtone memory blob of size " +
-  //                          std::to_string(size));
 
   err = pxtn->read(fp);
   if (err != pxtnOK) throw GetError::pxtone(err);
