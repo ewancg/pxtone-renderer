@@ -11,8 +11,8 @@ add_executable(pxtone-renderer
 
     pxtone/pxtnDelay.cpp
     pxtone/pxtnDelay.h
-    pxtone/pxtnDescriptor.cpp
-    pxtone/pxtnDescriptor.h
+    pxtone/pxtnData.cpp
+    pxtone/pxtnData.h
     pxtone/pxtnError.cpp
     pxtone/pxtnError.h
     pxtone/pxtnEvelist.cpp

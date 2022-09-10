@@ -109,7 +109,7 @@ bool pxtnPulse_Oggv::_SetInformation() {
       goto End;  //{printf("Invalid Vorbis bitstream header. \n");exit(1);}
     case OV_EFAULT:
       goto End;  //{printf("Internal logic fault; indicates a bug or heap/stack
-                 // corruption. \n");exit(1);}
+                 //corruption. \n");exit(1);}
     default:
       break;
   }
@@ -133,7 +133,10 @@ End:
 // global
 /////////////////
 
-pxtnPulse_Oggv::pxtnPulse_Oggv() {
+pxtnPulse_Oggv::pxtnPulse_Oggv(pxtnIO_r io_read, pxtnIO_w io_write,
+                               pxtnIO_seek io_seek, pxtnIO_pos io_pos) {
+  _set_io_funcs(io_read, io_write, io_seek, io_pos);
+
   _p_data = NULL;
   _ch = 0;
   _sps2 = 0;
@@ -144,41 +147,37 @@ pxtnPulse_Oggv::pxtnPulse_Oggv() {
 pxtnPulse_Oggv::~pxtnPulse_Oggv() { Release(); }
 
 void pxtnPulse_Oggv::Release() {
-  if (_p_data) {
-    free(_p_data);
-    _p_data = NULL;
-  }
+  if (_p_data) free(_p_data);
+  _p_data = NULL;
   _ch = 0;
   _sps2 = 0;
   _smp_num = 0;
   _size = 0;
 }
 
-pxtnERR pxtnPulse_Oggv::ogg_read(pxtnDescriptor* desc) {
+pxtnERR pxtnPulse_Oggv::ogg_read(void* desc) {
   pxtnERR res = pxtnERR_VOID;
 
-  if (!(_size = desc->get_size_bytes())) {
+  if (!_data_get_size(desc, &_size) || !_size) {
     res = pxtnERR_desc_r;
-    goto End;
+    goto term;
   }
   if (!(_p_data = (char*)malloc(_size))) {
     res = pxtnERR_memory;
-    goto End;
+    goto term;
   }
-  if (!desc->r(_p_data, 1, _size)) {
+  if (!_io_read(desc, _p_data, 1, _size)) {
     res = pxtnERR_desc_r;
-    goto End;
+    goto term;
   }
-  if (!_SetInformation()) goto End;
+  if (!_SetInformation()) goto term;
 
   res = pxtnOK;
-End:
+term:
 
   if (res != pxtnOK) {
-    if (_p_data) {
-      free(_p_data);
-      _p_data = NULL;
-    }
+    if (_p_data) free(_p_data);
+    _p_data = NULL;
     _size = 0;
   }
   return res;
@@ -204,49 +203,43 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
   oc.tell_func = _mtell;
 
   switch (ov_open_callbacks(&ovmem, &vf, NULL, 0, oc)) {
-    case OV_EREAD:
-      res = pxtnERR_ogg;
-      goto term;  //{printf("A read from media returned an error.\n");exit(1);}
-    case OV_ENOTVORBIS:
-      res = pxtnERR_ogg;
-      goto term;  //{printf("Bitstream is not Vorbis data. \n");exit(1);}
-    case OV_EVERSION:
-      res = pxtnERR_ogg;
-      goto term;  //{printf("Vorbis version mismatch. \n");exit(1);}
-    case OV_EBADHEADER:
-      res = pxtnERR_ogg;
-      goto term;  //{printf("Invalid Vorbis bitstream header. \n");exit(1);}
+    case OV_EREAD:       //{printf("A read from media returned an
+                         //error.\n");exit(1);}
+    case OV_ENOTVORBIS:  //{printf("Bitstream is not Vorbis data. \n");exit(1);}
+    case OV_EVERSION:    //{printf("Vorbis version mismatch. \n");exit(1);}
+    case OV_EBADHEADER:  //{printf("Invalid Vorbis bitstream header.
+                         //\n");exit(1);}
     case OV_EFAULT:
       res = pxtnERR_ogg;
       goto term;  //{printf("Internal logic fault; indicates a bug or heap/stack
-                  // corruption. \n");exit(1);}
+                  //corruption. \n");exit(1);}
     default:
       break;
   }
 
   vi = ov_info(&vf, -1);
+
+  static int32_t current_section;
+  static char pcmout[4096] = {
+      0};  // take 4k out of the data segment, not the stack
   {
-    int32_t current_section;
-    char pcmout[4096] = {0};  // take 4k out of the data segment, not the stack
-    {
-      int32_t smp_num = (int32_t)ov_pcm_total(&vf, -1);
-      // uint32_t bytes;
+    int32_t smp_num = (int32_t)ov_pcm_total(&vf, -1);
+    uint32_t bytes;
 
-      // bytes = vi->channels * 2 * smp_num;
+    bytes = vi->channels * 2 * smp_num;
 
-      res = p_pcm->Create(vi->channels, vi->rate, 16, smp_num);
-      if (res != pxtnOK) goto term;
-    }
-    // decode..
-    {
-      int32_t ret = 0;
-      uint8_t* p = (uint8_t*)p_pcm->get_p_buf_variable();
-      do {
-        ret = ov_read(&vf, pcmout, 4096, 0, 2, 1, &current_section);
-        if (ret > 0) memcpy(p, pcmout, ret);  // fwrite( pcmout, 1, ret, of );
-        p += ret;
-      } while (ret);
-    }
+    res = p_pcm->Create(vi->channels, vi->rate, 16, smp_num);
+    if (res != pxtnOK) goto term;
+  }
+  // decode..
+  {
+    int32_t ret = 0;
+    uint8_t* p = (uint8_t*)p_pcm->get_p_buf_variable();
+    do {
+      ret = ov_read(&vf, pcmout, 4096, 0, 2, 1, &current_section);
+      if (ret > 0) memcpy(p, pcmout, ret);  // fwrite( pcmout, 1, ret, of );
+      p += ret;
+    } while (ret);
   }
 
   // end.
@@ -273,66 +266,66 @@ int32_t pxtnPulse_Oggv::GetSize() const {
   return sizeof(int32_t) * 4 + _size;
 }
 
-bool pxtnPulse_Oggv::ogg_write(pxtnDescriptor* desc) const {
+bool pxtnPulse_Oggv::ogg_write(void* desc) const {
   bool b_ret = false;
 
-  if (!desc->w_asfile(_p_data, 1, _size)) goto End;
+  if (!_io_write(desc, _p_data, 1, _size)) goto End;
 
   b_ret = true;
 End:
   return b_ret;
 }
 
-bool pxtnPulse_Oggv::pxtn_write(pxtnDescriptor* p_doc) const {
+bool pxtnPulse_Oggv::pxtn_write(void* desc) const {
   if (!_p_data) return false;
 
-  if (!p_doc->w_asfile(&_ch, sizeof(int32_t), 1)) return false;
-  if (!p_doc->w_asfile(&_sps2, sizeof(int32_t), 1)) return false;
-  if (!p_doc->w_asfile(&_smp_num, sizeof(int32_t), 1)) return false;
-  if (!p_doc->w_asfile(&_size, sizeof(int32_t), 1)) return false;
-  if (!p_doc->w_asfile(_p_data, sizeof(char), _size)) return false;
+  if (!_io_write(desc, &_ch, sizeof(int32_t), 1)) return false;
+  if (!_io_write(desc, &_sps2, sizeof(int32_t), 1)) return false;
+  if (!_io_write(desc, &_smp_num, sizeof(int32_t), 1)) return false;
+  if (!_io_write(desc, &_size, sizeof(int32_t), 1)) return false;
+  if (!_io_write(desc, _p_data, sizeof(char), _size)) return false;
 
   return true;
 }
 
-bool pxtnPulse_Oggv::pxtn_read(pxtnDescriptor* p_doc) {
+bool pxtnPulse_Oggv::pxtn_read(void* desc) {
   bool b_ret = false;
 
-  if (!p_doc->r(&_ch, sizeof(int32_t), 1)) goto End;
-  if (!p_doc->r(&_sps2, sizeof(int32_t), 1)) goto End;
-  if (!p_doc->r(&_smp_num, sizeof(int32_t), 1)) goto End;
-  if (!p_doc->r(&_size, sizeof(int32_t), 1)) goto End;
+  if (!_io_read(desc, &_ch, sizeof(int32_t), 1)) goto End;
+  if (!_io_read(desc, &_sps2, sizeof(int32_t), 1)) goto End;
+  if (!_io_read(desc, &_smp_num, sizeof(int32_t), 1)) goto End;
+  if (!_io_read(desc, &_size, sizeof(int32_t), 1)) goto End;
 
   if (!_size) goto End;
 
   if (!(_p_data = (char*)malloc(_size))) goto End;
-  if (!p_doc->r(_p_data, 1, _size)) goto End;
+  if (!_io_read(desc, _p_data, 1, _size)) goto End;
 
   b_ret = true;
 End:
 
   if (!b_ret) {
-    if (_p_data) {
-      free(_p_data);
-      _p_data = NULL;
-    }
+    if (_p_data) free(_p_data);
+    _p_data = NULL;
     _size = 0;
   }
 
   return b_ret;
 }
 
-bool pxtnPulse_Oggv::Copy(pxtnPulse_Oggv* p_dst) const {
-  p_dst->Release();
-  if (!_p_data) return true;
+bool pxtnPulse_Oggv::copy_from(const pxtnPulse_Oggv* src) {
+  pxtnData::copy_from(src);
 
-  if (!(p_dst->_p_data = (char*)malloc(_size))) return false;
-  memcpy(p_dst->_p_data, _p_data, _size);
+  Release();
+  if (!src->_p_data) return true;
 
-  p_dst->_ch = _ch;
-  p_dst->_sps2 = _sps2;
-  p_dst->_size = _size;
-  p_dst->_smp_num = _smp_num;
+  if (!(_p_data = (char*)malloc(src->_size))) return false;
+  memcpy(_p_data, src->_p_data, src->_size);
+
+  _ch = src->_ch;
+  _sps2 = src->_sps2;
+  _size = src->_size;
+  _smp_num = src->_smp_num;
 
   return true;
 }

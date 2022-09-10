@@ -246,23 +246,51 @@ bool parseArguments(const std::vector<std::string> &args) {
   return true;
 }
 
+static bool ioRead(void *source, void *destination, int size, int num) {
+  auto f = static_cast<FILE *>(source);
+  int i = fread(destination, size, num, f);
+  if (i < num) return false;
+  return true;
+}
+
+static bool ioWrite(void *source, const void *destination, int size, int num) {
+  auto f = static_cast<FILE *>(source);
+  int i = fwrite(destination, size, num, f);
+  if (i < num) return false;
+  return true;
+}
+
+static bool ioSeek(void *source, int mode, int size) {
+  auto f = static_cast<FILE *>(source);
+  if (fseek(f, size, mode)) return false;
+  return true;
+}
+
+static bool ioTell(void *source, int32_t *p_pos) {
+  auto f = static_cast<FILE *>(source);
+  int i = ftell(f);
+  if (i < 0) return false;
+  *p_pos = i;
+  return true;
+}
+
 void convert(std::filesystem::path file) {
   FILE *fp = fopen(file.string().c_str(), "rb");
   if (fp == nullptr)
     throw GetError::file("Error opening file " + file.string() +
                          ". The file may not be readable to your user.");
-  fseek(fp, 0L, SEEK_END);
-  size_t size = static_cast<size_t>(ftell(fp));
-  unsigned char *data = static_cast<unsigned char *>(malloc(size));
-  if (data == nullptr)
-    throw GetError::generic("Error allocating " + std::to_string(size) +
-                            " bytes.");
-  rewind(fp);
-  if (fread(data, 1, size, fp) != size)
-    throw GetError::file("Bytes read does not match file size.");
-  fclose(fp);
+  // fseek(fp, 0L, SEEK_END);
+  // size_t size = static_cast<size_t>(ftell(fp));
+  // unsigned char *data = static_cast<unsigned char *>(malloc(size));
+  // if (data == nullptr)
+  //   throw GetError::generic("Error allocating " + std::to_string(size) +
+  //                           " bytes.");
+  // rewind(fp);
+  // if (fread(data, 1, size, fp) != size)
+  //   throw GetError::file("Bytes read does not match file size.");
+  // fclose(fp);
 
-  pxtnService *pxtn = new pxtnService();
+  pxtnService *pxtn = new pxtnService(ioRead, ioWrite, ioSeek, ioTell);
 
   auto err = pxtn->init();
   if (err != pxtnOK) throw GetError::pxtone(err);
@@ -271,12 +299,13 @@ void convert(std::filesystem::path file) {
         "Could not set destination quality: " + std::to_string(CHANNEL_COUNT) +
         " channels, " + std::to_string(SAMPLE_RATE) + "Hz.");
 
-  pxtnDescriptor desc;
-  if (!desc.set_memory_r(static_cast<void *>(data), static_cast<int>(size)))
-    throw GetError::pxtone("Could not set pxtone memory blob of size " +
-                           std::to_string(size));
+  // pxtnData desc;
 
-  err = pxtn->read(&desc);
+  // if (!desc.set_memory_r(static_cast<void *>(data), static_cast<int>(size)))
+  //   throw GetError::pxtone("Could not set pxtone memory blob of size " +
+  //                          std::to_string(size));
+
+  err = pxtn->read(fp);
   if (err != pxtnOK) throw GetError::pxtone(err);
   err = pxtn->tones_ready();
   if (err != pxtnOK) throw GetError::pxtone(err);
