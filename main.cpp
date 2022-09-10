@@ -246,16 +246,46 @@ bool parseArguments(const std::vector<std::string> &args) {
   return true;
 }
 
+static void correctEndianness(unsigned char * correct, int elemSize, int elemCount) {
+  unsigned char buf;
+  std::cout << elemSize << ":" << std::endl;
+  for (int iNum; iNum < elemCount; ++iNum) {
+    std::cout << iNum << std::endl;
+    for (int iByte = 0; iByte <= ((elemSize / 2) - 1); ++iByte) {
+      std::cout << iByte << " / " << ((elemSize / 2) - 1) << std::endl;
+      std::cout << iNum * elemSize + iByte << " = " << static_cast<int>(correct[iNum * elemSize + iByte]) << std::endl;
+      std::cout << iNum * elemSize + (elemSize - 1) - iByte << " = " << static_cast<int>(correct[iNum * elemSize + (elemSize - 1) - iByte]) << std::endl;
+      buf = correct[iNum * elemSize + iByte];
+      correct[iNum * elemSize + iByte] = correct[iNum * elemSize + (elemSize - 1) - iByte];
+      correct[iNum * elemSize + (elemSize - 1) - iByte] = buf;
+      std::cout << iNum * elemSize + iByte << " = " << static_cast<int>(correct[iNum * elemSize + iByte]) << std::endl;
+      std::cout << iNum * elemSize + (elemSize - 1) - iByte << " = " << static_cast<int>(correct[iNum * elemSize + (elemSize - 1) - iByte]) << std::endl;
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+}
+
 static bool ioRead(void *source, void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   int i = fread(destination, size, num, f);
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+  correctEndianness (static_cast<unsigned char *>(destination), size, num);
+#endif
   if (i < num) return false;
   return true;
 }
 
 static bool ioWrite(void *source, const void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
-  int i = fwrite(destination, size, num, f);
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+  unsigned char *wData = static_cast<unsigned char *>(malloc (num * size));
+  memcpy (wData, destination, num * size);
+  correctEndianness (wData, size, num);
+#else
+  #define wData destination
+#endif
+  int i = fwrite(wData, size, num, f);
   if (i < num) return false;
   return true;
 }

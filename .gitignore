@@ -78,3 +78,6 @@ CMakeLists.txt.user
 *.wav
 *.ogg
 *.flac
+
+# Nix result link
+/result

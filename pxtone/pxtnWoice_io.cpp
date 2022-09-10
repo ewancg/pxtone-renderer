@@ -1,4 +1,4 @@
-﻿// '12/03/06
+// '12/03/06
 
 #include "./pxtn.h"
 
@@ -55,7 +55,17 @@ pxtnERR pxtnWoice::io_matePCM_r( void* desc )
 	int32_t             size =  0 ;
 
 	if( !_io_read( desc, &size,                             4, 1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &pcm , sizeof( _MATERIALSTRUCT_PCM ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &pcm , sizeof( _MATERIALSTRUCT_PCM ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.x3x_unit_no , sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.basic_key, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.voice_flags, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.ch, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.bps, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.sps, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.tuning, sizeof( float ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &pcm.data_size, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
 
 	if( ((int32_t)pcm.voice_flags) & PTV_VOICEFLAG_UNCOVERED )return pxtnERR_fmt_unknown;
 
@@ -140,7 +150,14 @@ pxtnERR pxtnWoice::io_matePTN_r( void* desc )
 	int32_t             size =  0 ;
 
 	if( !_io_read( desc, &size, sizeof(int32_t            ), 1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &ptn,  sizeof(_MATERIALSTRUCT_PTN), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &ptn,  sizeof(_MATERIALSTRUCT_PTN), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptn.x3x_unit_no,  sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptn.basic_key,  sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptn.voice_flags,  sizeof(uint32_t), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptn.tuning,  sizeof(float), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptn.rrr,  sizeof(int32_t), 1 ) ) return pxtnERR_desc_r;
 
 	if     ( ptn.rrr > 1 ) return pxtnERR_fmt_unknown;
 	else if( ptn.rrr < 0 ) return pxtnERR_fmt_unknown;
@@ -221,7 +238,13 @@ pxtnERR pxtnWoice::io_matePTV_r( void* desc )
 	int32_t             size =  0 ;
 
 	if( !_io_read( desc, &size, sizeof(int32_t              ), 1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &ptv,  sizeof( _MATERIALSTRUCT_PTV ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &ptv,  sizeof( _MATERIALSTRUCT_PTV ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptv.x3x_unit_no,  sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptv.rrr,  sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptv.x3x_tuning,  sizeof( float ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptv.size,  sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
 
 	if( ptv.rrr ) return pxtnERR_fmt_unknown;
 
@@ -285,7 +308,13 @@ pxtnERR pxtnWoice::io_mateOGGV_r( void* desc )
 	int32_t              size =  0;
 
 	if( !_io_read( desc, &size, 4,                              1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &mate, sizeof( _MATERIALSTRUCT_OGGV ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &mate, sizeof( _MATERIALSTRUCT_OGGV ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mate.xxx, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mate.basic_key, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mate.voice_flags, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mate.tuning, sizeof( float ), 1 ) ) return pxtnERR_desc_r;
 
 	if( ((int32_t)mate.voice_flags) & PTV_VOICEFLAG_UNCOVERED ) return pxtnERR_fmt_unknown;
 
