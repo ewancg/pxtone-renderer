@@ -1,4 +1,4 @@
-﻿// '12/03/03
+// '12/03/03
 
 #include "./pxtnData.h"
 
@@ -179,7 +179,12 @@ pxtnERR pxtnMaster::io_r_x4x( void* desc )
 	float       beat_tempo = 0;
 
 	if( !_io_read( desc, &size,                     4, 1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &mast, sizeof( _x4x_MASTER ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &mast, sizeof( _x4x_MASTER ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mast.data_num, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mast.rrr, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &mast.event_num, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
 
 	// unknown format
 	if( mast.data_num != 3 ) return pxtnERR_fmt_unknown;
@@ -233,7 +238,12 @@ int32_t pxtnMaster::io_r_x4x_EventNum( void* desc )
 
 	memset( &mast, 0, sizeof( _x4x_MASTER ) );
 	if( !_io_read( desc, &size,                     4, 1 ) ) return 0;
-	if( !_io_read( desc, &mast, sizeof( _x4x_MASTER ), 1 ) ) return 0;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &mast, sizeof( _x4x_MASTER ), 1 ) ) return 0;
+	if( !_io_read( desc, &mast.data_num, sizeof( uint16_t ), 1 ) ) return 0;
+	if( !_io_read( desc, &mast.rrr, sizeof( uint16_t ), 1 ) ) return 0;
+	if( !_io_read( desc, &mast.event_num, sizeof( uint16_t ), 1 ) ) return 0;
 
 	if( mast.data_num != 3 ) return 0;
 

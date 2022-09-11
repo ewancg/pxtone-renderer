@@ -1,4 +1,4 @@
-﻿// '12/03/03
+// '12/03/03
 
 #include "./pxtnOverDrive.h"
 
@@ -67,7 +67,14 @@ bool pxtnOverDrive::Write( void* desc ) const
 	// dela ----------
 	size = sizeof( _OVERDRIVESTRUCT );
 	if( !_io_write( desc, &size, sizeof(uint32_t), 1 ) ) return false;
-	if( !_io_write( desc, &over, size,        1 ) ) return false;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to write struct members separately
+	// if( !_io_write( desc, &over, size,        1 ) ) return false;
+	if( !_io_write( desc, &over.xxx, sizeof(uint16_t),        1 ) ) return false;
+	if( !_io_write( desc, &over.group, sizeof(uint16_t),        1 ) ) return false;
+	if( !_io_write( desc, &over.cut, sizeof(float),        1 ) ) return false;
+	if( !_io_write( desc, &over.amp, sizeof(float),        1 ) ) return false;
+	if( !_io_write( desc, &over.yyy, sizeof(float),        1 ) ) return false;
 
 	return true;
 }
@@ -79,7 +86,14 @@ pxtnERR pxtnOverDrive::Read( void* desc )
 
 	memset( &over, 0, sizeof(_OVERDRIVESTRUCT) );
 	if( !_io_read( desc, &size, 4,                        1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &over, sizeof(_OVERDRIVESTRUCT), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &over, sizeof(_OVERDRIVESTRUCT), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &over.xxx, sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &over.group, sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &over.cut, sizeof(float), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &over.amp, sizeof(float), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &over.yyy, sizeof(float), 1 ) ) return pxtnERR_desc_r;
 
 	if( over.xxx                         ) return pxtnERR_fmt_unknown;
 	if( over.yyy                         ) return pxtnERR_fmt_unknown;

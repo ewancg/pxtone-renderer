@@ -1,4 +1,4 @@
-﻿
+
 #include "./pxtn.h"
 
 #include "./pxtnMax.h"
@@ -130,7 +130,13 @@ bool pxtnDelay::Write( void* desc ) const
 	// dela ----------
 	size = sizeof( _DELAYSTRUCT );
 	if( !_io_write( desc, &size, sizeof(int32_t), 1 ) ) return false;
-	if( !_io_write( desc, &dela, size,            1 ) ) return false;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to write struct members separately
+	// if( !_io_write( desc, &dela, size,            1 ) ) return false;
+	if( !_io_write( desc, &dela.unit, sizeof(uint16_t),            1 ) ) return false;
+	if( !_io_write( desc, &dela.group, sizeof(uint16_t),            1 ) ) return false;
+	if( !_io_write( desc, &dela.rate, sizeof(float),            1 ) ) return false;
+	if( !_io_write( desc, &dela.freq, sizeof(float),            1 ) ) return false;
 
 	return true;
 }
@@ -141,7 +147,13 @@ pxtnERR pxtnDelay::Read( void* desc )
 	int32_t      size =  0 ;
 
 	if( !_io_read( desc, &size, 4,                    1 ) ) return pxtnERR_desc_r     ;
-	if( !_io_read( desc, &dela, sizeof(_DELAYSTRUCT), 1 ) ) return pxtnERR_desc_r     ;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &dela, sizeof(_DELAYSTRUCT), 1 ) ) return pxtnERR_desc_r     ;
+	if( !_io_read( desc, &dela.unit, sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r     ;
+	if( !_io_read( desc, &dela.group, sizeof(uint16_t), 1 ) ) return pxtnERR_desc_r     ;
+	if( !_io_read( desc, &dela.rate, sizeof(float), 1 ) ) return pxtnERR_desc_r     ;
+	if( !_io_read( desc, &dela.freq, sizeof(float), 1 ) ) return pxtnERR_desc_r     ;
 	if( dela.unit >= DELAYUNIT_num                  ) return pxtnERR_fmt_unknown;
 
 	_unit  = (DELAYUNIT)dela.unit;

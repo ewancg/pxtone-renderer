@@ -1,4 +1,4 @@
-﻿
+
 #include "./pxtnEvelist.h"
 
 void pxtnEvelist::Release()
@@ -833,7 +833,14 @@ pxtnERR pxtnEvelist::io_Unit_Read_x4x_EVENT( void* desc, bool bTailAbsolute, boo
 	int32_t          size     = 0;
 
 	if( !_io_read( desc, &size, 4,                          1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &evnt, sizeof( _x4x_EVENTSTRUCT ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &evnt, sizeof( _x4x_EVENTSTRUCT ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.unit_index, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.event_kind, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.data_num, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.rrr, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.event_num, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
 
 	if( evnt.data_num != 2               ) return pxtnERR_fmt_unknown;
 	if( evnt.event_kind >= EVENTKIND_NUM ) return pxtnERR_fmt_unknown;
@@ -866,7 +873,14 @@ pxtnERR pxtnEvelist::io_Read_x4x_EventNum( void* desc, int32_t* p_num ) const
 	int32_t          size =  0 ;
 
 	if( !_io_read( desc, &size, 4,                          1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &evnt, sizeof( _x4x_EVENTSTRUCT ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &evnt, sizeof( _x4x_EVENTSTRUCT ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.unit_index, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.event_kind, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.data_num, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.rrr, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &evnt.event_num, sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
 
 	// support only 2
 	if( evnt.data_num != 2 ) return pxtnERR_fmt_unknown;

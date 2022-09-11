@@ -1,4 +1,4 @@
-﻿// '12/03/03
+// '12/03/03
 
 #include "./pxtn.h"
 
@@ -318,7 +318,12 @@ bool pxtnUnit::Read_v1x( void* desc, int32_t *p_group )
 	int32_t   size;
 
 	if( !_io_read( desc, &size, 4,                   1 ) ) return false;
-	if( !_io_read( desc, &unit, sizeof( _x1x_UNIT ), 1 ) ) return false;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &unit, sizeof( _x1x_UNIT ), 1 ) ) return false;
+	if( !_io_read( desc, &unit.name, 1, pxtnMAX_TUNEUNITNAME ) ) return false;
+	if( !_io_read( desc, &unit.type, sizeof( uint16_t ), 1 ) ) return false;
+	if( !_io_read( desc, &unit.group, sizeof( uint16_t ), 1 ) ) return false;
 	if( (pxtnWOICETYPE)unit.type != pxtnWOICE_PCM        ) return false;
 
 	memcpy( _name_buf, unit.name, pxtnMAX_TUNEUNITNAME ); _name_buf[ pxtnMAX_TUNEUNITNAME ] = '\0';
@@ -343,7 +348,11 @@ pxtnERR pxtnUnit::Read_v3x( void* desc, int32_t *p_group )
 	int32_t   size =  0 ;
 
 	if( !_io_read( desc, &size, 4,                   1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &unit, sizeof( _x3x_UNIT ), 1 ) ) return pxtnERR_desc_r;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separately
+	// if( !_io_read( desc, &unit, sizeof( _x3x_UNIT ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &unit.type, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &unit.group, sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
 	if( (pxtnWOICETYPE)unit.type != pxtnWOICE_PCM &&
 		(pxtnWOICETYPE)unit.type != pxtnWOICE_PTV &&
 		(pxtnWOICETYPE)unit.type != pxtnWOICE_PTN ) return pxtnERR_fmt_unknown;
