@@ -1,6 +1,6 @@
-﻿#include "./pxtnData.h"
+#include "./pxtnData.h"
 
-
+#include "../endian.hpp"
 
 static bool _v_to_int( uint32_t* p_i, const uint8_t* bytes5, int byte_num )
 {
@@ -39,6 +39,12 @@ static bool _v_to_int( uint32_t* p_i, const uint8_t* bytes5, int byte_num )
 		return false;
 	}
 
+// OPNA2608 EDIT
+// this cast doesn't consider host endiannes
+// additionally b is larger than an int32_t so ignore the last uint8_t in it (the cast below also ignores it on little endian)
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+	correctEndianness (static_cast<unsigned char *>(b), 4, 1);
+#endif
 	*p_i = *((int32_t*)b);
 	return true;
 }

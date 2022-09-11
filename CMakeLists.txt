@@ -8,6 +8,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_FLAGS "-DpxINCLUDE_OGGVORBIS")
 add_executable(pxtone-renderer
     main.cpp
+    endian.cpp
 
     pxtone/pxtnDelay.cpp
     pxtone/pxtnDelay.h

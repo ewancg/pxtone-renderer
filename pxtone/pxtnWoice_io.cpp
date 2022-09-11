@@ -244,7 +244,7 @@ pxtnERR pxtnWoice::io_matePTV_r( void* desc )
 	if( !_io_read( desc, &ptv.x3x_unit_no,  sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
 	if( !_io_read( desc, &ptv.rrr,  sizeof( uint16_t ), 1 ) ) return pxtnERR_desc_r;
 	if( !_io_read( desc, &ptv.x3x_tuning,  sizeof( float ), 1 ) ) return pxtnERR_desc_r;
-	if( !_io_read( desc, &ptv.size,  sizeof( uint32_t ), 1 ) ) return pxtnERR_desc_r;
+	if( !_io_read( desc, &ptv.size,  sizeof( int32_t ), 1 ) ) return pxtnERR_desc_r;
 
 	if( ptv.rrr ) return pxtnERR_fmt_unknown;
 

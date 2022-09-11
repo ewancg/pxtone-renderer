@@ -1,4 +1,4 @@
-﻿//
+//
 // x1x : v.0.1.2.8 (-2005/06/03) project-info has quality, tempo, clock.
 // x2x : v.0.6.N.N (-2006/01/15) no exe version.
 // x3x : v.0.7.N.N (-2006/09/30) unit includes voice / basic-key use for only
@@ -796,7 +796,12 @@ bool pxtnService::_io_assiWOIC_w(void* desc, int32_t idx) const {
 
   size = sizeof(_ASSIST_WOICE);
   if (!_io_write(desc, &size, sizeof(uint32_t), 1)) return false;
-  if (!_io_write(desc, &assi, size, 1)) return false;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to write struct members separately
+  // if (!_io_write(desc, &assi, size, 1)) return false;
+  if (!_io_write(desc, &assi.woice_index, sizeof(uint16_t), 1)) return false;
+  if (!_io_write(desc, &assi.rrr, sizeof(uint16_t), 1)) return false;
+  if (!_io_write(desc, &assi.name, 1, pxtnMAX_TUNEWOICENAME)) return false;
 
   return true;
 }
@@ -809,7 +814,12 @@ pxtnERR pxtnService::_io_assiWOIC_r(void* desc) {
 
   if (!_io_read(desc, &size, 4, 1)) return pxtnERR_desc_r;
   if (size != sizeof(assi)) return pxtnERR_fmt_unknown;
-  if (!_io_read(desc, &assi, size, 1)) return pxtnERR_desc_r;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to read struct members separately
+  // if (!_io_read(desc, &assi, size, 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.woice_index, sizeof(uint16_t), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.rrr, sizeof(uint16_t), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.name, 1, pxtnMAX_TUNEWOICENAME)) return pxtnERR_desc_r;
   if (assi.rrr) return pxtnERR_fmt_unknown;
   if (assi.woice_index >= _woice_num) return pxtnERR_fmt_unknown;
 
@@ -843,7 +853,12 @@ bool pxtnService::_io_assiUNIT_w(void* desc, int32_t idx) const {
 
   size = sizeof(assi);
   if (!_io_write(desc, &size, sizeof(uint32_t), 1)) return false;
-  if (!_io_write(desc, &assi, size, 1)) return false;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to write struct members separately
+  // if (!_io_write(desc, &assi, size, 1)) return false;
+  if (!_io_write(desc, &assi.unit_index, sizeof(uint16_t), 1)) return false;
+  if (!_io_write(desc, &assi.rrr, sizeof(uint16_t), 1)) return false;
+  if (!_io_write(desc, &assi.name, 1, pxtnMAX_TUNEUNITNAME)) return false;
 
   return true;
 }
@@ -856,7 +871,12 @@ pxtnERR pxtnService::_io_assiUNIT_r(void* desc) {
 
   if (!_io_read(desc, &size, 4, 1)) return pxtnERR_desc_r;
   if (size != sizeof(assi)) return pxtnERR_fmt_unknown;
-  if (!_io_read(desc, &assi, sizeof(assi), 1)) return pxtnERR_desc_r;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to read struct members separately
+  // if (!_io_read(desc, &assi, sizeof(assi), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.unit_index, sizeof(uint16_t), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.rrr, sizeof(uint16_t), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &assi.name, 1, pxtnMAX_TUNEUNITNAME)) return pxtnERR_desc_r;
   if (assi.rrr) return pxtnERR_fmt_unknown;
   if (assi.unit_index >= _unit_num) return pxtnERR_fmt_unknown;
 
@@ -887,7 +907,11 @@ bool pxtnService::_io_UNIT_num_w(void* desc) const {
   size = sizeof(_NUM_UNIT);
 
   if (!_io_write(desc, &size, sizeof(int32_t), 1)) return false;
-  if (!_io_write(desc, &data, size, 1)) return false;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to write struct members separately
+  // if (!_io_write(desc, &data, size, 1)) return false;
+  if (!_io_write(desc, &data.num, sizeof(int16_t), 1)) return false;
+  if (!_io_write(desc, &data.rrr, sizeof(int16_t), 1)) return false;
 
   return true;
 }
@@ -900,7 +924,11 @@ pxtnERR pxtnService::_io_UNIT_num_r(void* desc, int32_t* p_num) {
 
   if (!_io_read(desc, &size, 4, 1)) return pxtnERR_desc_r;
   if (size != sizeof(_NUM_UNIT)) return pxtnERR_fmt_unknown;
-  if (!_io_read(desc, &data, sizeof(_NUM_UNIT), 1)) return pxtnERR_desc_r;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to read struct members separately
+  // if (!_io_read(desc, &data, sizeof(_NUM_UNIT), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &data.num, sizeof(int16_t), 1)) return pxtnERR_desc_r;
+  if (!_io_read(desc, &data.rrr, sizeof(int16_t), 1)) return pxtnERR_desc_r;
   if (data.rrr) return pxtnERR_fmt_unknown;
   if (data.num > _unit_max) return pxtnERR_fmt_new;
   if (data.num < 0) return pxtnERR_fmt_unknown;
@@ -1563,7 +1591,18 @@ bool pxtnService::_x1x_Project_Read(void* desc) {
   float beat_tempo;
 
   if (!_io_read(desc, &size, 4, 1)) return false;
-  if (!_io_read(desc, &prjc, sizeof(_x1x_PROJECT), 1)) return false;
+  // OPNA2608 EDIT
+  // this breaks on big-endian, need to read struct members separately
+  // if (!_io_read(desc, &prjc, sizeof(_x1x_PROJECT), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_name, 1, _MAX_PROJECTNAME_x1x)) return false;
+  if (!_io_read(desc, &prjc.x1x_beat_tempo, sizeof(float), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_beat_clock, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_beat_num, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_beat_note, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_meas_num, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_channel_num, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_bps, sizeof(uint16_t), 1)) return false;
+  if (!_io_read(desc, &prjc.x1x_sps, sizeof(uint32_t), 1)) return false;
 
   beat_num = prjc.x1x_beat_num;
   beat_tempo = prjc.x1x_beat_tempo;
