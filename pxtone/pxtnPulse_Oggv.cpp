@@ -1,4 +1,4 @@
-﻿
+
 #include "./pxtn.h"
 
 #ifdef pxINCLUDE_OGGVORBIS
@@ -7,6 +7,10 @@
 #include <vorbis/vorbisfile.h>
 
 #include "./pxtnPulse_Oggv.h"
+
+// OPNA2608 EDIT
+// need to know the host's endianness for the right argument to vorbisfile's ov_read
+#include "../endian.hpp"
 
 typedef struct {
   char* p_buf;   // ogg vorbis-data on memory.s
@@ -236,7 +240,10 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
     int32_t ret = 0;
     uint8_t* p = (uint8_t*)p_pcm->get_p_buf_variable();
     do {
-      ret = ov_read(&vf, pcmout, 4096, 0, 2, 1, &current_section);
+      // OPNA2608 EDIT
+      // 4th argument is "are we on big endian?", 0 for LE, 1 for BE
+      // ret = ov_read(&vf, pcmout, 4096, 0, 2, 1, &current_section);
+      ret = ov_read(&vf, pcmout, 4096, isBigEndian() ? 1 : 0, 2, 1, &current_section);
       if (ret > 0) memcpy(p, pcmout, ret);  // fwrite( pcmout, 1, ret, of );
       p += ret;
     } while (ret);

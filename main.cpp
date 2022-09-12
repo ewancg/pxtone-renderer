@@ -250,23 +250,25 @@ bool parseArguments(const std::vector<std::string> &args) {
 static bool ioRead(void *source, void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   int i = fread(destination, size, num, f);
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-  correctEndianness (static_cast<unsigned char *>(destination), size, num);
-#endif
+  if (isBigEndian()) {
+    correctEndianness (static_cast<unsigned char *>(destination), size, num);
+  }
   if (i < num) return false;
   return true;
 }
 
 static bool ioWrite(void *source, const void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-  unsigned char *wData = static_cast<unsigned char *>(malloc (num * size));
-  memcpy (wData, destination, num * size);
-  correctEndianness (wData, size, num);
-#else
-  #define wData destination
-#endif
-  int i = fwrite(wData, size, num, f);
+  const void *realData;
+  if (isBigEndian()) {
+    void *wData = malloc (num * size);
+    memcpy (wData, destination, num * size);
+    correctEndianness (static_cast<unsigned char *> (wData), size, num);
+    realData = wData;
+  } else {
+   realData = destination;
+  }
+  int i = fwrite(realData, size, num, f);
   if (i < num) return false;
   return true;
 }
