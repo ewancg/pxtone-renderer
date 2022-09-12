@@ -13,7 +13,7 @@ private:
 
 	bool    _b_init;
 	short*  _p_tables[ pxWAVETYPE_num ];
-	int32_t _rand_buf [ 2 ];
+	uint16_t _rand_buf [ 2 ];
 
 	void  _random_reset();
 	short _random_get  ();

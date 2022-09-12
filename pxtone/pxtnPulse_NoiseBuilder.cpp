@@ -1,4 +1,4 @@
-﻿
+
 #include "./pxtn.h"
 
 #include "./pxtnMem.h"
@@ -130,17 +130,17 @@ void  pxtnPulse_NoiseBuilder::_random_reset()
 
 short pxtnPulse_NoiseBuilder::_random_get()
 {
-	int32_t  w1, w2;
-	char *p1;
-	char *p2;
+	uint16_t  w1, w2;
+	uint8_t *p1;
+	uint8_t *p2;
 
-	w1 = (short)_rand_buf[ 0 ] + _rand_buf[ 1 ];
-	p1 = (char *)&w1;
-	p2 = (char *)&w2;
+	w1 = _rand_buf[ 0 ] + _rand_buf[ 1 ];
+	p1 = (uint8_t *)&w1;
+	p2 = (uint8_t *)&w2;
 	p2[ 0 ] = p1[ 1 ];
 	p2[ 1 ] = p1[ 0 ];
-	_rand_buf[ 1 ] = (short)_rand_buf[ 0 ];
-	_rand_buf[ 0 ] = (short)w2;
+	_rand_buf[ 1 ] = _rand_buf[ 0 ];
+	_rand_buf[ 0 ] = w2;
 
 	return (short)w2;
 }
