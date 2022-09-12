@@ -1,4 +1,4 @@
-﻿#ifndef pxtnPulse_NoiseBuilder_H
+#ifndef pxtnPulse_NoiseBuilder_H
 #define pxtnPulse_NoiseBuilder_H
 
 #include "./pxtnData.h"
@@ -13,6 +13,9 @@ private:
 
 	bool    _b_init;
 	short*  _p_tables[ pxWAVETYPE_num ];
+	// OPNA2608 EDIT
+	// see pxtnPulse_NoiseBuilder.cpp comment for explanation
+	// int32_t _rand_buf [ 2 ];
 	uint16_t _rand_buf [ 2 ];
 
 	void  _random_reset();

@@ -130,6 +130,26 @@ void  pxtnPulse_NoiseBuilder::_random_reset()
 
 short pxtnPulse_NoiseBuilder::_random_get()
 {
+// OPNA2608 EDIT
+// the original version uses a 32-bit signed type for _rand_buf which complicates the data access here
+// additionally, it has a signed integer overflow which is undefined behaviour in C
+// the new version here simplifies & fixes this by using unsigned 16-bit types
+// result sounds identical to me on x86, and it fixes noise on ppc
+/*
+	int32_t  w1, w2;
+	char *p1;
+	char *p2;
+
+	w1 = (short)_rand_buf[ 0 ] + _rand_buf[ 1 ];
+	p1 = (char *)&w1;
+	p2 = (char *)&w2;
+	p2[ 0 ] = p1[ 1 ];
+	p2[ 1 ] = p1[ 0 ];
+	_rand_buf[ 1 ] = (short)_rand_buf[ 0 ];
+	_rand_buf[ 0 ] = (short)w2;
+
+	return (short)w2;
+*/
 	uint16_t  w1, w2;
 	uint8_t *p1;
 	uint8_t *p2;
