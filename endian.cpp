@@ -1,20 +1,24 @@
 #include "endian.hpp"
 
 #if !defined (__BYTE_ORDER__)
-boolean isBigEndian() {
+#include <cstdint>
+
+bool isBigEndian() {
   // endianness should never change mid-execution, just determine this once and save it for later calls
   static int alreadyDetermined = -1;
 
   if (alreadyDetermined == -1) {
     uint32_t test = 0xdeadbeef;
-    if (*static_cast<uint8_t*> (&test) == 0xde) {
-      alreadyDetermined = static_cast<boolean> (true);
+    // unsafe C cast to inspect unsafe C things ;)
+    uint8_t *asBytes = (unsigned char *) &test;
+    if (asBytes[0] == 0xde) {
+      alreadyDetermined = static_cast<bool> (true);
     } else {
-      alreadyDetermined = static_cast<boolean> (false);
+      alreadyDetermined = static_cast<bool> (false);
     }
   }
 
-  return static_cast<boolean> (alreadyDetermined);
+  return static_cast<bool> (alreadyDetermined);
 }
 #endif
 

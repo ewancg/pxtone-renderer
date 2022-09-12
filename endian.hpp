@@ -7,7 +7,7 @@
     #define isBigEndian() false
   #endif
 #else
-boolean isBigEndian();
+bool isBigEndian();
 #endif
 
 void correctEndianness(unsigned char * correct, int elemSize, int elemCount);
