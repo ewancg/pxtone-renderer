@@ -1,4 +1,4 @@
-﻿
+
 #include "./pxtn.h"
 
 #include "./pxtnMem.h"
@@ -95,7 +95,16 @@ pxtnERR pxtnPulse_PCM::read( void* desc )
 
 	// read format.
 	if( !_io_read( desc ,&size  , sizeof(uint32_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
-	if( !_io_read( desc, &format,               18, 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to read struct members separate
+	// if( !_io_read( desc, &format,               18, 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.formatID,               sizeof(uint16_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.ch,               sizeof(uint16_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.sps,               sizeof(uint32_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.byte_per_sec,               sizeof(uint32_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.block_size,               sizeof(uint16_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.bps,               sizeof(uint16_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
+	if( !_io_read( desc, &format.ext,               sizeof(uint16_t), 1 ) ){ res = pxtnERR_desc_r     ; goto term; }
 	
 	if( format.formatID != 0x0001               ){ res = pxtnERR_pcm_unknown; goto term; }
 	if( format.ch  != 1 && format.ch  !=  2     ){ res = pxtnERR_pcm_unknown; goto term; }
@@ -185,7 +194,16 @@ bool pxtnPulse_PCM::write  ( void* desc, const char* pstrLIST ) const
 	if( !_io_write( desc, &riff_size,   sizeof(uint32_t), 1 ) ) goto End;
 	if( !_io_write( desc, tag_WAVE,     sizeof(char    ), 4 ) ) goto End;
 	if( !_io_write( desc, tag_fmt_,     sizeof(char    ), 8 ) ) goto End;
-	if( !_io_write( desc, &format,                    18, 1 ) ) goto End;
+	// OPNA2608 EDIT
+	// this breaks on big-endian, need to write struct members separate
+	// if( !_io_write( desc, &format,                    18, 1 ) ) goto End;
+	if( !_io_write( desc, &format.formatID,              sizeof(uint16_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.ch,                    sizeof(uint16_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.sps,                   sizeof(uint32_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.byte_per_sec,          sizeof(uint32_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.block_size,            sizeof(uint16_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.bps,                   sizeof(uint16_t), 1 ) ) goto End;
+	if( !_io_write( desc, &format.ext,                   sizeof(uint16_t), 1 ) ) goto End;
 		
 	if( bText )
 	{

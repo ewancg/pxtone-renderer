@@ -1,6 +1,8 @@
-﻿#include "./pxtnData.h"
+#include "./pxtnData.h"
 
-
+// OPNA2608 EDIT
+// we don't use the supplied IO handler in one isntance, so we need to manually call the endianness fix if needed
+#include "../endian.hpp"
 
 static bool _v_to_int( uint32_t* p_i, const uint8_t* bytes5, int byte_num )
 {
@@ -39,6 +41,12 @@ static bool _v_to_int( uint32_t* p_i, const uint8_t* bytes5, int byte_num )
 		return false;
 	}
 
+	// OPNA2608 EDIT
+	// this cast doesn't consider host endiannes
+	// additionally b is larger than an int32_t so ignore the last uint8_t in it (the cast below also ignores it on little endian)
+	if (isBigEndian()) {
+		correctEndianness (static_cast<unsigned char *>(b), 4, 1);
+	}
 	*p_i = *((int32_t*)b);
 	return true;
 }
