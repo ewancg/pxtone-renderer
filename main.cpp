@@ -251,7 +251,7 @@ static bool ioRead(void *source, void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   int i = fread(destination, size, num, f);
   if (isBigEndian()) {
-    correctEndianness (static_cast<unsigned char *>(destination), size, num);
+    correctEndianness(static_cast<unsigned char *>(destination), size, num);
   }
   if (i < num) return false;
   return true;
@@ -261,12 +261,12 @@ static bool ioWrite(void *source, const void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   const void *realData;
   if (isBigEndian()) {
-    void *wData = malloc (num * size);
-    memcpy (wData, destination, num * size);
-    correctEndianness (static_cast<unsigned char *> (wData), size, num);
+    void *wData = malloc(num * size);
+    memcpy(wData, destination, num * size);
+    correctEndianness(static_cast<unsigned char *>(wData), size, num);
     realData = wData;
   } else {
-   realData = destination;
+    realData = destination;
   }
   int i = fwrite(realData, size, num, f);
   if (i < num) return false;
