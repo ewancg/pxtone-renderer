@@ -241,6 +241,8 @@ bool pxtnWoice::io_matePTV_w( void* desc ) const
 		if( !_io_write( desc, &ptv.rrr,  sizeof(uint16_t), 1 ) ) return false;
 		if( !_io_write( desc, &ptv.x3x_tuning,  sizeof(float), 1 ) ) return false;
 		if( !_io_write( desc, &ptv.size,  sizeof(int32_t), 1 ) ) return false;
+
+		return true;
 	};
 
 	//if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
