@@ -44,14 +44,14 @@ bool pxtnWoice::io_matePCM_w( void* desc ) const
 	if( !_io_write( desc, &size, sizeof(uint32_t           ), 1 ) ) return false;
     //ewan edit; init every struct member individually
     //if( !_io_write( desc, &pcm , sizeof(_MATERIALSTRUCT_PCM), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.sps , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.bps , sizeof(unsigned short), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.ch , sizeof(unsigned short), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.data_size , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.x3x_unit_no , sizeof(unsigned short), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.x3x_unit_no , sizeof(uint16_t), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.basic_key , sizeof(uint16_t), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.voice_flags , sizeof(uint32_t), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.ch , sizeof(uint16_t), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.bps , sizeof(uint16_t), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.sps , sizeof(uint32_t), 1 ) ) return false;
     if( !_io_write( desc, &pcm.tuning , sizeof(float), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.voice_flags , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.basic_key , sizeof(unsigned short), 1 ) ) return false;
+    if( !_io_write( desc, &pcm.data_size , sizeof(uint32_t), 1 ) ) return false;
 
     if( !_io_write( desc, p_pcm->get_p_buf(), 1, pcm.data_size  ) ) return false;
 
