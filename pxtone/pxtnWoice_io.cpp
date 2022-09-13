@@ -42,18 +42,18 @@ bool pxtnWoice::io_matePCM_w( void* desc ) const
 	uint32_t size = sizeof( _MATERIALSTRUCT_PCM ) + pcm.data_size;
 
 	if( !_io_write( desc, &size, sizeof(uint32_t           ), 1 ) ) return false;
-    //ewan edit; init every struct member individually
-    //if( !_io_write( desc, &pcm , sizeof(_MATERIALSTRUCT_PCM), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.sps , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.bps , sizeof(unsigned short), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.ch , sizeof(unsigned short), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.data_size , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.x3x_unit_no , sizeof(unsigned short), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.tuning , sizeof(float), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.voice_flags , sizeof(unsigned int), 1 ) ) return false;
-    if( !_io_write( desc, &pcm.basic_key , sizeof(unsigned short), 1 ) ) return false;
+	//ewan edit; init every struct member individually
+	//if( !_io_write( desc, &pcm , sizeof(_MATERIALSTRUCT_PCM), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.x3x_unit_no , sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.basic_key , sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.voice_flags , sizeof(uint32_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.ch , sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.bps , sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.sps , sizeof(uint32_t), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.tuning , sizeof(float), 1 ) ) return false;
+	if( !_io_write( desc, &pcm.data_size , sizeof(uint32_t), 1 ) ) return false;
 
-    if( !_io_write( desc, p_pcm->get_p_buf(), 1, pcm.data_size  ) ) return false;
+	if( !_io_write( desc, p_pcm->get_p_buf(), 1, pcm.data_size  ) ) return false;
 
 	return true;
 }
@@ -140,13 +140,13 @@ bool pxtnWoice::io_matePTN_w( void* desc ) const
 	// pre
 	if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
 
-    // ewan edit; init all struct members separately for endian
-//	if( !_io_write( desc, &ptn,  sizeof(_MATERIALSTRUCT_PTN), 1 ) ) return false;
-    if( !_io_write( desc, &ptn.x3x_unit_no,  sizeof(uint16_t), 1 ) ) return false;
-    if( !_io_write( desc, &ptn.basic_key,  sizeof(uint16_t), 1 ) ) return false;
-    if( !_io_write( desc, &ptn.voice_flags,  sizeof(uint16_t), 1 ) ) return false;
-    if( !_io_write( desc, &ptn.tuning,  sizeof(float), 1 ) ) return false;
-    if( !_io_write( desc, &ptn.rrr,  sizeof(int32_t), 1 ) ) return false;
+	// ewan edit; init all struct members separately for endian
+	// if( !_io_write( desc, &ptn,  sizeof(_MATERIALSTRUCT_PTN), 1 ) ) return false;
+	if( !_io_write( desc, &ptn.x3x_unit_no,  sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &ptn.basic_key,  sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &ptn.voice_flags,  sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &ptn.tuning,  sizeof(float), 1 ) ) return false;
+	if( !_io_write( desc, &ptn.rrr,  sizeof(int32_t), 1 ) ) return false;
 
 	size += sizeof(_MATERIALSTRUCT_PTN);
 
@@ -232,20 +232,22 @@ bool pxtnWoice::io_matePTV_w( void* desc ) const
 
 	// pre write
 
-    // ewan edit; init. each struct member individually (for endianness) and put writing code into its own routine
-    auto write = [=] () -> bool {
-        if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
-        //if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
+	// ewan edit; init. each struct member individually (for endianness) and put writing code into its own routine
+	auto write = [=] () -> bool {
+		if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
+		//if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
 
-        if( !_io_write( desc, &ptv.x3x_unit_no,  sizeof(uint16_t), 1 ) ) return false;
-        if( !_io_write( desc, &ptv.rrr,  sizeof(uint16_t), 1 ) ) return false;
-        if( !_io_write( desc, &ptv.x3x_tuning,  sizeof(float), 1 ) ) return false;
-        if( !_io_write( desc, &ptv.size,  sizeof(int32_t), 1 ) ) return false;
-    };
+		if( !_io_write( desc, &ptv.x3x_unit_no,  sizeof(uint16_t), 1 ) ) return false;
+		if( !_io_write( desc, &ptv.rrr,  sizeof(uint16_t), 1 ) ) return false;
+		if( !_io_write( desc, &ptv.x3x_tuning,  sizeof(float), 1 ) ) return false;
+		if( !_io_write( desc, &ptv.size,  sizeof(int32_t), 1 ) ) return false;
 
-    //if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
-    //if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
-    if(!write()) return false;
+		return true;
+	};
+
+	//if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
+	//if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
+	if(!write()) return false;
 
 	if( !PTV_Write( desc, &ptv.size ) ) return false;
 
@@ -253,9 +255,9 @@ bool pxtnWoice::io_matePTV_w( void* desc ) const
 
 	size = ptv.size +  sizeof(_MATERIALSTRUCT_PTV);
 
-    //if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
-    //if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
-    if(!write()) return false;
+	//if( !_io_write( desc, &size, sizeof(int32_t),             1 ) ) return false;
+	//if( !_io_write( desc, &ptv,  sizeof(_MATERIALSTRUCT_PTV), 1 ) ) return false;
+	if(!write()) return false;
 
 	if( !_io_seek ( desc, SEEK_CUR, ptv.size ) ) return false;
 
@@ -326,12 +328,12 @@ bool pxtnWoice::io_mateOGGV_w( void* desc ) const
 
 	if( !_io_write( desc, &size, sizeof(uint32_t)            , 1 ) ) return false;
 
-    //ewan edit: init each struct member individually for endian
-    //if( !_io_write( desc, &mate, sizeof(_MATERIALSTRUCT_OGGV), 1 ) ) return false;
-    if( !_io_write( desc, &mate.xxx, sizeof(uint16_t), 1 ) ) return false;
-    if( !_io_write( desc, &mate.basic_key, sizeof(uint16_t), 1 ) ) return false;
-    if( !_io_write( desc, &mate.voice_flags, sizeof(uint32_t), 1 ) ) return false;
-    if( !_io_write( desc, &mate.tuning, sizeof(float), 1 ) ) return false;
+	//ewan edit: init each struct member individually for endian
+	//if( !_io_write( desc, &mate, sizeof(_MATERIALSTRUCT_OGGV), 1 ) ) return false;
+	if( !_io_write( desc, &mate.xxx, sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &mate.basic_key, sizeof(uint16_t), 1 ) ) return false;
+	if( !_io_write( desc, &mate.voice_flags, sizeof(uint32_t), 1 ) ) return false;
+	if( !_io_write( desc, &mate.tuning, sizeof(float), 1 ) ) return false;
 
 
 	if( !p_vc->p_oggv->pxtn_write( desc ) ) return false;
