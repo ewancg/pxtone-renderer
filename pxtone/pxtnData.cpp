@@ -1,8 +1,8 @@
 #include "./pxtnData.h"
 
 // OPNA2608 EDIT
-// we don't use the supplied IO handler in one isntance, so we need to manually call the endianness fix if needed
-#include "../endian.hpp"
+// we don't use the supplied IO handler in one instance, so we need to manually call the endianness fix if needed
+#include "endian.hpp"
 
 static bool _v_to_int( uint32_t* p_i, const uint8_t* bytes5, int byte_num )
 {

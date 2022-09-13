@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "endian.hpp"
-#include "pxtone/pxtnService.h"
+#include "pxtnService.h"
 #include "sndfile.h"
 
 #pragma pack(1)
