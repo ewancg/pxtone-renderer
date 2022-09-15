@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 
 project(pxtone-renderer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -10,19 +10,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(GNUInstallDirs)
 
 set(RENDERER_EXE ${PROJECT_NAME})
-
-
-### Single-file endian fix library
-# set(FIXENDIAN_LIB fixendian)
-
-# add_library(${FIXENDIAN_LIB} STATIC
-#     endian.cpp
-# )
-
-# target_include_directories(${FIXENDIAN_LIB}
-#     PUBLIC
-#     ${CMAKE_CURRENT_SOURCE_DIR}
-# )
 
 
 # Pxtone library
@@ -45,7 +32,6 @@ add_executable(${RENDERER_EXE}
 
 target_link_libraries(${RENDERER_EXE} PRIVATE
     ${PXTONE_LIB}
-    #[[ ${FIXENDIAN_LIB} ]]
     SndFile::sndfile
 )
 

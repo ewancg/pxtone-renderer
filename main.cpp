@@ -6,7 +6,6 @@
 #include <set>
 #include <vector>
 
-//#include "endian.hpp"
 #include "pxtnService.h"
 #include "sndfile.h"
 

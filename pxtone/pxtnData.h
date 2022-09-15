@@ -1,8 +1,6 @@
-﻿// '17/10/11 pxtnData.
+// '17/10/11 pxtnData.
 
 // ewan '20/9/13 add endian
-
-#pragma once
 
 #ifndef pxtnData_H
 #define pxtnData_H
@@ -61,9 +59,9 @@ public :
 	bool init();
 	bool Xxx ();
 
-    // endian changes begin
-    static void _correct_endian(unsigned char* correct, int elem_size, int elem_count);
-    // endian changes end
+	// endian changes begin
+	static void _correct_endian(unsigned char* correct, int elem_size, int elem_count);
+	// endian changes end
 };
 
 #endif

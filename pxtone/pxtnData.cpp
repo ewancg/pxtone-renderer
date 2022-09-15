@@ -1,10 +1,10 @@
 #include "./pxtnData.h"
 
-// OPNA2608 EDIT
-// we don't use the supplied IO handler in one instance, so we need to manually
-// call the endianness fix if needed
-//#include "endian.hpp"
-
+// OPNA2608 & Ewan EDIT start
+// Functions to detect host endianness & correct file I/O data when needed.
+// IO handlers are (currently) expected to call these & correct operation results as needed.
+// One exception are the v <-> int functions here, which bypass these corrections and need to
+// manually call them.
 #if !defined(__BYTE_ORDER__)
 #include <cstdint>
 
@@ -28,7 +28,7 @@ bool _is_big_endian() {
 }
 #endif
 
-static void _correct_endian(unsigned char* correct, int elem_size,
+void pxtnData::_correct_endian(unsigned char* correct, int elem_size,
                             int elem_count) {
   unsigned char buf;
   for (int i = 0; i < elem_count;
@@ -42,6 +42,7 @@ static void _correct_endian(unsigned char* correct, int elem_size,
     }
   }
 }
+// OPNA2608 & Ewan EDIT end
 
 static bool _v_to_int(uint32_t* p_i, const uint8_t* bytes5, int byte_num) {
   uint8_t b[5] = {};
@@ -83,7 +84,7 @@ static bool _v_to_int(uint32_t* p_i, const uint8_t* bytes5, int byte_num) {
   // additionally b is larger than an int32_t so ignore the last uint8_t in it
   // (the cast below also ignores it on little endian)
   if (_is_big_endian()) {
-    _correct_endian(static_cast<unsigned char*>(b), 4, 1);
+    pxtnData::_correct_endian(static_cast<unsigned char*>(b), 4, 1);
   }
   *p_i = *((int32_t*)b);
   return true;
