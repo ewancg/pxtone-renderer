@@ -6,8 +6,7 @@
 #include <set>
 #include <vector>
 
-#include "endian.hpp"
-#include "pxtone/pxtnService.h"
+#include "pxtnService.h"
 #include "sndfile.h"
 
 #pragma pack(1)
@@ -250,8 +249,9 @@ bool parseArguments(const std::vector<std::string> &args) {
 static bool ioRead(void *source, void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   int i = fread(destination, size, num, f);
-  if (isBigEndian()) {
-    correctEndianness(static_cast<unsigned char *>(destination), size, num);
+  if (_is_big_endian()) {
+    pxtnData::_correct_endian(static_cast<unsigned char *>(destination), size,
+                              num);
   }
   if (i < num) return false;
   return true;
@@ -260,10 +260,10 @@ static bool ioRead(void *source, void *destination, int size, int num) {
 static bool ioWrite(void *source, const void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   const void *realData;
-  if (isBigEndian()) {
+  if (_is_big_endian()) {
     void *wData = malloc(num * size);
     memcpy(wData, destination, num * size);
-    correctEndianness(static_cast<unsigned char *>(wData), size, num);
+    pxtnData::_correct_endian(static_cast<unsigned char *>(wData), size, num);
     realData = wData;
   } else {
     realData = destination;

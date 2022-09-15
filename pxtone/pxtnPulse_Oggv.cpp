@@ -9,7 +9,8 @@
 #include "./pxtnPulse_Oggv.h"
 
 // OPNA2608 EDIT
-// need to know the host's endianness for the right argument to vorbisfile's ov_read
+// need to know the host's endianness for the right argument to vorbisfile's
+// ov_read
 #include "../endian.hpp"
 
 typedef struct {
@@ -113,7 +114,7 @@ bool pxtnPulse_Oggv::_SetInformation() {
       goto End;  //{printf("Invalid Vorbis bitstream header. \n");exit(1);}
     case OV_EFAULT:
       goto End;  //{printf("Internal logic fault; indicates a bug or heap/stack
-                 //corruption. \n");exit(1);}
+                 // corruption. \n");exit(1);}
     default:
       break;
   }
@@ -208,7 +209,7 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
 
   switch (ov_open_callbacks(&ovmem, &vf, NULL, 0, oc)) {
     case OV_EREAD:       //{printf("A read from media returned an
-                         //error.\n");exit(1);}
+                         // error.\n");exit(1);}
     case OV_ENOTVORBIS:  //{printf("Bitstream is not Vorbis data. \n");exit(1);}
     case OV_EVERSION:    //{printf("Vorbis version mismatch. \n");exit(1);}
     case OV_EBADHEADER:  //{printf("Invalid Vorbis bitstream header.
@@ -216,7 +217,7 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
     case OV_EFAULT:
       res = pxtnERR_ogg;
       goto term;  //{printf("Internal logic fault; indicates a bug or heap/stack
-                  //corruption. \n");exit(1);}
+                  // corruption. \n");exit(1);}
     default:
       break;
   }
@@ -243,7 +244,8 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
       // OPNA2608 EDIT
       // 4th argument is "are we on big endian?", 0 for LE, 1 for BE
       // ret = ov_read(&vf, pcmout, 4096, 0, 2, 1, &current_section);
-      ret = ov_read(&vf, pcmout, 4096, isBigEndian() ? 1 : 0, 2, 1, &current_section);
+      ret = ov_read(&vf, pcmout, 4096, _is_big_endian() ? 1 : 0, 2, 1,
+                    &current_section);
       if (ret > 0) memcpy(p, pcmout, ret);  // fwrite( pcmout, 1, ret, of );
       p += ret;
     } while (ret);

@@ -1,4 +1,6 @@
-﻿// '17/10/11 pxtnData.
+// '17/10/11 pxtnData.
+
+// ewan '20/9/13 add endian
 
 #ifndef pxtnData_H
 #define pxtnData_H
@@ -9,6 +11,18 @@ typedef bool (* pxtnIO_r   )( void* user,       void* p_dst, int32_t size, int32
 typedef bool (* pxtnIO_w   )( void* user, const void* p_dst, int32_t size, int32_t num );
 typedef bool (* pxtnIO_seek)( void* user,       int   mode , int32_t size              );
 typedef bool (* pxtnIO_pos )( void* user,                    int32_t* p_pos            );
+
+// endian changes begin
+#if defined(__BYTE_ORDER__)
+#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define _is_big_endian() true
+#else
+#define _is_big_endian() false
+#endif
+#else
+bool _is_big_endian();
+#endif
+// endian changes end
 
 class pxtnData
 {
@@ -44,6 +58,10 @@ public :
 
 	bool init();
 	bool Xxx ();
+
+	// endian changes begin
+	static void _correct_endian(unsigned char* correct, int elem_size, int elem_count);
+	// endian changes end
 };
 
 #endif
