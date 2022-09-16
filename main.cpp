@@ -452,15 +452,10 @@ int main(int argc, char *argv[]) {
 }
 
 /* TODO:
- *  get compression level working
- *
- *  maybe add metadata
- *
- *  remove arg parsing boilerplate
- *
- *  clean up cmakelists and add deployment for libraries locally instead of
- *  cmake-dependent
- *
- *  implement & test other formats libsndfile supports (big ones are opus and
- *  mp3)
+ *  - Figure out why different WAVs are produced on different platforms/compilers
+ *  - Figure out why sometimes loop points are messed up
+ *  - Compression level
+ *  - Metadata
+ *  - Remove argument parsing boilerplate
+ *  - Implement & test other libsndfile supported formats such as MP3 and Opus
  **/
