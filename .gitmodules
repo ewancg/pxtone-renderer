@@ -1,0 +1,15 @@
+[submodule "extern/ogg"]
+	path = extern/ogg
+	url = https://gitlab.xiph.org/xiph/ogg
+[submodule "extern/vorbis"]
+	path = extern/vorbis
+	url = https://gitlab.xiph.org/xiph/vorbis
+[submodule "extern/flac"]
+	path = extern/flac
+	url = https://gitlab.xiph.org/xiph/flac
+[submodule "extern/libsndfile"]
+	path = extern/libsndfile
+	url = https://github.com/libsndfile/libsndfile
+[submodule "extern/opus"]
+	path = extern/opus
+	url = https://gitlab.xiph.org/xiph/opus

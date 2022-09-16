@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  BUILD_TYPE: RelWithDebInfo
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        config:
+          - { name: 'Windows MSVC', os: windows-latest, compiler: msvc, shell: bash }
+          - { name: 'Windows MinGW', os: windows-latest, compiler: mingw, shell: 'msys2 {0}' }
+          - { name: 'macOS', os: macos-latest, compiler: applellvm, shell: bash }
+          - { name: 'Linux', os: ubuntu-latest, compiler: gcc, shell: bash }
+      fail-fast: false
+
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.config.shell }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set build cores amount
+        id: build-cores
+        shell: bash
+        run: |
+          # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          export amount=2
+          if [ '${{ runner.os }}' == 'macOS' ]; then
+            export amount=3
+          fi
+
+          echo "Amount of cores we can build with: ${amount}"
+
+          echo "::set-output name=amount::${amount}"
+
+      - name: Set artifact identifier
+        id: artifact-id
+        shell: bash
+        run: |
+          export artifact_id="recordings_${GITHUB_SHA}_${{ runner.os }}_${{ matrix.config.compiler }}"
+
+          echo "Artifact identifier: ${artifact_id}"
+
+          echo "::set-output name=id::${artifact_id}"
+
+      - name: Setup Toolchain [Windows MSVC]
+        if: ${{ matrix.config.compiler == 'msvc' }}
+        uses: seanmiddleditch/gha-setup-vsdevenv@v4
+
+      - name: Setup Toolchain [Windows MinGW]
+        if: ${{ matrix.config.compiler == 'mingw' }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: |
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-libvorbis
+            mingw-w64-x86_64-libsndfile
+            make
+
+      - name: Build Dependencies [Windows MSVC]
+        if: ${{ matrix.config.compiler == 'msvc' }}
+        run: |
+          export installPrefix=${PWD}/target
+          export VERBOSE=1
+          for dependency in {opus,ogg,vorbis,flac,libsndfile}; do
+            pushd extern/${dependency}
+            cmake \
+              -B build \
+              -DCMAKE_PREFIX_PATH=${installPrefix} \
+              -DCMAKE_INSTALL_PREFIX=${installPrefix} \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIBS=ON \
+              -DBUILD_PROGRAMS=OFF \
+              -DBUILD_EXAMPLES=OFF \
+              -DBUILD_TESTING=OFF \
+              -DBUILD_DOCS=OFF \
+              -DINSTALL_MANPAGES=OFF
+            cmake \
+              --build build \
+              --config ${{ env.BUILD_TYPE }} \
+              --parallel ${{ steps.build-cores.outputs.amount }}
+            cmake \
+              --install build \
+              --config ${{ env.BUILD_TYPE }}
+            popd
+          done
+
+      - name: Install Dependencies [macOS]
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          export HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew update
+          brew install \
+            pkg-config \
+            libvorbis \
+            libsndfile
+
+      - name: Install Dependencies [Ubuntu]
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt update
+          sudo apt install \
+            libvorbis-dev \
+            libsndfile1-dev
+
+      - name: Configure
+        run: |
+          export CMAKE_EXTRA_ARGS=()
+          if [ '${{ runner.os }}' == 'Windows' ]; then
+            if [ '${{ matrix.config.compiler }}' == 'mingw' ]; then
+              CMAKE_EXTRA_ARGS+=(
+                '-G' 'MSYS Makefiles'
+                "-DCMAKE_PREFIX_PATH=${PWD}/target"
+              )
+            fi
+          fi
+
+          cmake \
+            -B ${PWD}/build \
+            -DCMAKE_INSTALL_PREFIX=${PWD}/target \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            "${CMAKE_EXTRA_ARGS[@]}"
+
+      - name: Build
+        run: |
+          export VERBOSE=1
+          cmake \
+            --build ${PWD}/build \
+            --config ${{ env.BUILD_TYPE }} \
+            --parallel ${{ steps.build-cores.outputs.amount }}
+
+      - name: Install
+        run: |
+          cmake \
+            --install ${PWD}/build \
+            --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        run: |
+          export renderer=${PWD}/target/bin/pxtone-renderer
+          export sumtool=sha256sum
+          if [ '${{ runner.os }}' == 'Windows' ]; then
+            export renderer=${renderer}.exe
+          elif [ '${{ runner.os }}' == 'macOS' ]; then
+            export sumtool="shasum -a 256"
+          fi
+
+          ${renderer} tests/*
+          ${sumtool} *.wav
+
+      - name: Upload recordings
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact-id.outputs.id }}
+          path: ./*.wav
