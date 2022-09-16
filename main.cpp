@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <string>
 
 #include "pxtnService.h"
 #include "sndfile.h"
