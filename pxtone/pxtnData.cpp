@@ -104,6 +104,12 @@ void _int_to_v(uint8_t* bytes5, int* p_byte_num, uint32_t i) {
   bytes5[4] = 0;
   a[4] = 0;
 
+  // OPNA2608 EDIT
+  // need to reverse order on big endian for byte order to match expectation
+  if (_is_big_endian()) {
+    pxtnData::_correct_endian(static_cast<unsigned char*>(a), 4, 1);
+  }
+
   // 1byte(7bit)
   if (i < 0x00000080) {
     *p_byte_num = 1;
