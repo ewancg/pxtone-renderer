@@ -22,7 +22,7 @@
 
 // clang-format off
 constexpr char usage[] =
-    "Usage: pxtone-decoder [options] file(s)...\n"
+    "Usage: pxtone-renderer [options] file(s)...\n"
     "By default, the provided files will be rendered as .wav to your working directory.\n"
     "Options:\n"
     "  --format, -f        [OGG, WAV, FLAC]    Encode data to this format.\n"
