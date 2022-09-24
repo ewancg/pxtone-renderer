@@ -36,6 +36,7 @@ After the prerequisites are met, the following should be fine:
 `cmake -B ./build -S ./ && cmake --build ./build`
 
 ## Thanks
+ - OPNA2608; big endian fixes, CI, testing 
  - Sidedishes; testing
  - Clownacy; bugfixes in pxtone, testing
  - SlightlyIntelligentMonkey; testing
