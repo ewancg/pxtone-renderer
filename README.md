@@ -2,7 +2,7 @@
 Render pxtone projects.
 
 ```
-Usage: pxtone-decoder [options] file(s)...
+Usage: pxtone-renderer [options] file(s)...
 By default, the provided files will be rendered as .wav to your working directory.
 Options:
   --format, -f        [OGG, WAV, FLAC]    Encode data to this format.
