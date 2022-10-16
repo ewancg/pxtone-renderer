@@ -753,7 +753,7 @@ pxtnERR pxtnService::_io_Read_OldUnit(void* desc, int32_t ver) {
 
   if (group >= _group_num) group = _group_num - 1;
 
-  evels->x4x_Read_Add(0, (uint8_t)_unit_num, EVENTKIND_GROUPNO, (int32_t)trunc(group));
+  evels->x4x_Read_Add(0, (uint8_t)_unit_num, EVENTKIND_GROUPNO, (int32_t)(group));
   evels->x4x_Read_NewKind();
   evels->x4x_Read_Add(0, (uint8_t)_unit_num, EVENTKIND_VOICENO,
                       (int32_t)_unit_num);

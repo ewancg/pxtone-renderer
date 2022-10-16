@@ -288,7 +288,7 @@ bool pxtnPulse_PCM::_Convert_ChannelNum( int32_t new_ch )
 			b = 0;
 			for( a = 0; a < sample_size; a+= 2 )
             {
-                temp1       = (int32_t)trunc(_p_smp[a] )+ (int32_t)trunc(_p_smp[a+1]);
+                temp1       = (int32_t)(_p_smp[a] )+ (int32_t)(_p_smp[a+1]);
 				p_work[b  ] = (uint8_t)( temp1 / 2 );
 				b++;
 			}
