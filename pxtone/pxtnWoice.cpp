@@ -441,7 +441,7 @@ pxtnERR pxtnWoice::Tone_Ready_envelope( int32_t sps )
 		if( p_enve->head_num )
 		{
 			for( e = 0; e < p_enve->head_num; e++ ) size += p_enve->points[ e ].x;
-			p_vi->env_size = (int32_t)( (double)size * sps / p_enve->fps );
+            p_vi->env_size = (int32_t)trunc( (double)size * sps / p_enve->fps );
 			if( !p_vi->env_size ) p_vi->env_size = 1;
 
 			if( !pxtnMem_zero_alloc( (void**)&p_vi->p_env, p_vi->env_size                       ) ){ res = pxtnERR_memory; goto term; }
@@ -454,7 +454,7 @@ pxtnERR pxtnWoice::Tone_Ready_envelope( int32_t sps )
 			{
 				if( !e || p_enve->points[ e ].x ||  p_enve->points[ e ].y )
 				{
-					offset        += (int32_t)( (double)p_enve->points[ e ].x * sps / p_enve->fps );
+                    offset        += (int32_t)trunc( (double)p_enve->points[ e ].x * sps / p_enve->fps );
 					p_point[ e ].x = offset;
 					p_point[ e ].y =                p_enve->points[ e ].y;
 					head_num++;
@@ -490,7 +490,7 @@ pxtnERR pxtnWoice::Tone_Ready_envelope( int32_t sps )
 
 		if( p_enve->tail_num )
 		{
-			p_vi->env_release = (int32_t)( (double)p_enve->points[ p_enve->head_num ].x * sps / p_enve->fps );
+            p_vi->env_release = (int32_t)trunc( (double)p_enve->points[ p_enve->head_num ].x * sps / p_enve->fps );
 		}
 		else 
 		{

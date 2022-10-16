@@ -60,14 +60,14 @@ pxtnERR pxtnDelay::Tone_Ready( int32_t beat_num, float beat_tempo, int32_t sps )
 
 	if( _freq && _rate )
 	{
-		_offset   = 0;
-		_rate_s32 = (int32_t)_rate; // /100;
+        _offset   = 0;
+        _rate_s32 = (int32_t)trunc(_rate); // /100;
 
 		switch( _unit )
 		{
-		case DELAYUNIT_Beat  : _smp_num = (int32_t)( sps * 60            / beat_tempo / _freq ); break;
-		case DELAYUNIT_Meas  : _smp_num = (int32_t)( sps * 60 * beat_num / beat_tempo / _freq ); break;
-		case DELAYUNIT_Second: _smp_num = (int32_t)( sps                              / _freq ); break;
+        case DELAYUNIT_Beat  : _smp_num = (int32_t)trunc( sps * 60            / beat_tempo / _freq ); break;
+        case DELAYUNIT_Meas  : _smp_num = (int32_t)trunc( sps * 60 * beat_num / beat_tempo / _freq ); break;
+        case DELAYUNIT_Second: _smp_num = (int32_t)trunc( sps                              / _freq ); break;
 		}
 
 		for( int32_t c = 0; c < pxtnMAX_CHANNEL; c++ )

@@ -501,7 +501,7 @@ bool pxtnService::moo_set_master_volume(float v) {
 //  }
 
 //  if (_sampled_proc) {
-//    int32_t clock = (int32_t)(_moo_smp_count / _moo_clock_rate);
+//    int32_t clock = (int32_t)trunc(_moo_smp_count / _moo_clock_rate);
 //    if (!_sampled_proc(_sampled_user, this)) {
 //      _moo_b_end_vomit = true;
 //      goto term;
@@ -541,7 +541,7 @@ int32_t pxtnService::Moo(void* p_buf, int32_t size, int32_t* filled_size) {
   if (filled_size) *filled_size = smp_num * _dst_byte_per_smp;
 
   if (_sampled_proc) {
-    // int32_t clock = (int32_t)( _moo_smp_count / _moo_clock_rate );
+    // int32_t clock = (int32_t)trunc( _moo_smp_count / _moo_clock_rate );
     if (!_sampled_proc(_sampled_user, this)) {
       _moo_b_end_vomit = true;
     }

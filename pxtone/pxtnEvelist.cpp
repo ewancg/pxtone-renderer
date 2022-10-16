@@ -846,8 +846,8 @@ pxtnERR pxtnEvelist::io_Unit_Read_x4x_EVENT( void* desc, bool bTailAbsolute, boo
 	if( evnt.event_kind >= EVENTKIND_NUM ) return pxtnERR_fmt_unknown;
 	if( bCheckRRR && evnt.rrr            ) return pxtnERR_fmt_unknown;
 
-	absolute = 0;
-	for( e = 0; e < (int32_t)evnt.event_num; e++ )
+    absolute = 0;
+    for( e = 0; e < (int32_t)trunc(evnt.event_num); e++ )
 	{
 		if( !_data_r_v( desc,&clock ) ) break;
 		if( !_data_r_v( desc,&value ) ) break;
@@ -885,7 +885,7 @@ pxtnERR pxtnEvelist::io_Read_x4x_EventNum( void* desc, int32_t* p_num ) const
 	// support only 2
 	if( evnt.data_num != 2 ) return pxtnERR_fmt_unknown;
 
-	for( e = 0; e < (int32_t)evnt.event_num; e++ )
+    for( e = 0; e < (int32_t)trunc(evnt.event_num); e++ )
 	{
 		if( !_data_r_v( desc,&work ) ) break;
 		if( !_data_r_v( desc,&work ) ) break;

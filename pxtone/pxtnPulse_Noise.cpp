@@ -114,12 +114,12 @@ static const uint32_t _ver =  20120418 ; // 16 wave types.
 
 bool pxtnPulse_Noise::_WriteOscillator( const pxNOISEDESIGN_OSCILLATOR *p_osc, void* desc, int32_t *p_add ) const
 {
-	int32_t work;
-	work = (int32_t) p_osc->type        ; if( !_data_w_v( desc, work, p_add ) ) return false;
-	work = (int32_t) p_osc->b_rev       ; if( !_data_w_v( desc, work, p_add ) ) return false;
-	work = (int32_t)(p_osc->freq   * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
-	work = (int32_t)(p_osc->volume * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
-	work = (int32_t)(p_osc->offset * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
+    int32_t work;
+    work = (int32_t)(p_osc->type);        if( !_data_w_v( desc, work, p_add ) ) return false;
+    work = (int32_t)(p_osc->b_rev);       if( !_data_w_v( desc, work, p_add ) ) return false;
+    work = (int32_t)trunc(p_osc->freq   * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
+    work = (int32_t)trunc(p_osc->volume * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
+    work = (int32_t)trunc(p_osc->offset * 10); if( !_data_w_v( desc, work, p_add ) ) return false;
 	return true;
 }
 

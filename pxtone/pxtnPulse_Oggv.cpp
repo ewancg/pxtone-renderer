@@ -30,14 +30,14 @@ static size_t _mread(void* p, size_t size, size_t nmemb, void* p_void) {
 
   int32_t left = pom->size - pom->pos;
 
-  if ((int32_t)(size * nmemb) >= left) {
+  if ((int32_t)trunc(size * nmemb) >= left) {
     memcpy(p, &pom->p_buf[pom->pos], pom->size - pom->pos);
     pom->pos = pom->size;
     return left / size;
   }
 
   memcpy(p, &pom->p_buf[pom->pos], nmemb * size);
-  pom->pos += (int32_t)(nmemb * size);
+  pom->pos += (int32_t)trunc(nmemb * size);
 
   return nmemb;
 }
@@ -54,13 +54,13 @@ static int _mseek(void* p_void, ogg_int64_t offset, int32_t mode) {
 
   switch (mode) {
     case SEEK_SET:
-      newpos = (int32_t)offset;
+    newpos = (int32_t)trunc(offset);
       break;
     case SEEK_CUR:
-      newpos = pom->pos + (int32_t)offset;
+      newpos = pom->pos + (int32_t)trunc(offset);
       break;
     case SEEK_END:
-      newpos = pom->size + (int32_t)offset;
+      newpos = pom->size + (int32_t)trunc(offset);
       break;
     default:
       return -1;
@@ -123,7 +123,7 @@ bool pxtnPulse_Oggv::_SetInformation() {
 
   _ch = vi->channels;
   _sps2 = vi->rate;
-  _smp_num = (int32_t)ov_pcm_total(&vf, -1);
+  _smp_num = (int32_t)trunc(ov_pcm_total(&vf, -1));
 
   // end.
   ov_clear(&vf);
@@ -228,7 +228,7 @@ pxtnERR pxtnPulse_Oggv::Decode(pxtnPulse_PCM* p_pcm) const {
   static char pcmout[4096] = {
       0};  // take 4k out of the data segment, not the stack
   {
-    int32_t smp_num = (int32_t)ov_pcm_total(&vf, -1);
+      int32_t smp_num = (int32_t)trunc(ov_pcm_total(&vf, -1));
     uint32_t bytes;
 
     bytes = vi->channels * 2 * smp_num;

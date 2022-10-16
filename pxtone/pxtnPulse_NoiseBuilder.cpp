@@ -11,7 +11,7 @@
 #define _KEY_TOP        0x3200 //  40 key
 
 #define _smp_num_rand    44100
-#define _smp_num         (int32_t)( _BASIC_SPS / _BASIC_FREQUENCY )
+#define _smp_num         (int32_t)trunc( _BASIC_SPS / _BASIC_FREQUENCY )
 
 
 enum _RANDOMTYPE
@@ -81,7 +81,7 @@ void _set_ocsillator( _OSCILLATOR *p_to, pxNOISEDESIGN_OSCILLATOR *p_from, int32
 	p_to->bReverse   = p_from->b_rev;
 
 	p_to->rdm_start  = 0;
-	p_to->rdm_index  = (int32_t)( (double)(_smp_num_rand) * ( p_from->offset / 100 ) );
+    p_to->rdm_index  = (int32_t)trunc( (double)(_smp_num_rand) * ( p_from->offset / 100 ) );
 	p = p_tbl_rand;
 	p_to->rdm_margin = p[ p_to->rdm_index ];
 
@@ -401,7 +401,7 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 		_set_ocsillator( &pU->volu, &p_du->volu, sps, _p_tables[ p_du->volu.type ], _p_tables[ pxWAVETYPE_Random ] );
 	}
 
-	smp_num = (int32_t)( (double)p_noise->get_smp_num_44k() / ( 44100.0 / sps ) );
+    smp_num = (int32_t)trunc( (double)p_noise->get_smp_num_44k() / ( 44100.0 / sps ) );
 
 	p_pcm = new pxtnPulse_PCM( _io_read, _io_write, _io_seek, _io_pos );
 	if( p_pcm->Create( ch, sps, bps, smp_num ) != pxtnOK ) goto End;
@@ -424,13 +424,13 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 					po = &pU->main;
 					switch( po->ran_type )
 					{
-					case _RANDOM_None:
-						offset =            (int32_t)po->offset    ;
+                    case _RANDOM_None:
+                        offset =            (int32_t)trunc(po->offset);
 						if( offset >= 0  ) work = po->p_smp[ offset ];
 						else               work = 0;
 						break;
-					case _RANDOM_Saw:
-						if( po->offset >= 0 ) work = po->rdm_start + po->rdm_margin * (int32_t)po->offset / _smp_num;
+                    case _RANDOM_Saw:
+                        if( po->offset >= 0 ) work = po->rdm_start + po->rdm_margin * (int32_t)trunc(po->offset) / _smp_num;
 						else                  work = 0;
 						break;
 					case _RANDOM_Rect:
@@ -449,8 +449,8 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 						offset = (int32_t   )po->offset;
 						vol    = (double)po->p_smp[ offset ];
 						break;
-					case _RANDOM_Saw:
-						vol = po->rdm_start + po->rdm_margin * (int32_t)po->offset / _smp_num;
+                    case _RANDOM_Saw:
+                        vol = po->rdm_start + po->rdm_margin * (int32_t)trunc(po->offset) / _smp_num;
 						break;
 					case _RANDOM_Rect:
 						vol = po->rdm_start;
@@ -471,7 +471,7 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 				}
 			}
 
-			byte4 = (int32_t)store;
+            byte4 = (int32_t)trunc(store);
 			if( byte4 >  _SAMPLING_TOP ) byte4 =  _SAMPLING_TOP;
 			if( byte4 < -_SAMPLING_TOP ) byte4 = -_SAMPLING_TOP;
 			if( bps ==  8 ){ *           p   = (unsigned char)( ( byte4 >> 8 ) + 128 ); p += 1; } //  8bit
@@ -489,12 +489,12 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 
 				switch( po->ran_type )
 				{
-				case _RANDOM_None:
-					offset = (int32_t)po->offset    ;
+                case _RANDOM_None:
+                    offset = (int32_t)trunc(po->offset)    ;
 					fre = _KEY_TOP * po->p_smp[ offset ] / _SAMPLING_TOP;
 					break;
-				case _RANDOM_Saw:
-					fre = po->rdm_start + po->rdm_margin * (int32_t) po->offset / _smp_num;
+                case _RANDOM_Saw:
+                    fre = po->rdm_start + po->rdm_margin * (int32_t) trunc(po->offset) / _smp_num;
 					break;
 				case _RANDOM_Rect:
 					fre = po->rdm_start;
@@ -504,7 +504,7 @@ pxtnPulse_PCM *pxtnPulse_NoiseBuilder::BuildNoise( pxtnPulse_Noise *p_noise, int
 				if( po->bReverse ) fre *= -1;
 				fre *= po->volume;
 
-				_incriment( &pU->main, pU->main.incriment * _freq->Get( (int32_t)fre ), _p_tables[ pxWAVETYPE_Random ] );
+                _incriment( &pU->main, pU->main.incriment * _freq->Get( (int32_t)trunc(fre) ), _p_tables[ pxWAVETYPE_Random ] );
 				_incriment( &pU->freq, pU->freq.incriment,                          _p_tables[ pxWAVETYPE_Random ] );
 				_incriment( &pU->volu, pU->volu.incriment,                          _p_tables[ pxWAVETYPE_Random ] );
 
