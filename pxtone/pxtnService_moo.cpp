@@ -82,7 +82,7 @@ bool pxtnService::_moo_ResetVoiceOn(pxtnUnit* p_u, int32_t w) const {
                  p_vc->tuning;
     }
     p_u->Tone_Reset_and_2prm(
-        v, (int32_t)(p_inst->env_release / _moo_clock_rate), ofs_freq);
+        v, (int32_t)trunc(p_inst->env_release / _moo_clock_rate), ofs_freq);
   }
   return true;
 }
@@ -103,7 +103,7 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
   // envelope..
   for (int32_t u = 0; u < _unit_num; u++) _units[u]->Tone_Envelope();
 
-  int32_t clock = (int32_t)(_moo_smp_count / _moo_clock_rate);
+  int32_t clock = (int32_t)trunc(_moo_smp_count / _moo_clock_rate);
 
   // events..
   for (; _moo_p_eve && _moo_p_eve->clock <= clock;
@@ -116,9 +116,8 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
 
     switch (_moo_p_eve->kind) {
       case EVENTKIND_ON: {
-        int32_t on_count =
-            (int32_t)((_moo_p_eve->clock + _moo_p_eve->value - clock) *
-                      _moo_clock_rate);
+        int32_t on_count = (int32_t)trunc(
+            (_moo_p_eve->clock + _moo_p_eve->value - clock) * _moo_clock_rate);
         if (on_count <= 0) {
           p_u->Tone_ZeroLives();
           break;
@@ -134,8 +133,9 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
           // release..
           if (p_vi->env_release) {
             int32_t max_life_count1 =
-                (int32_t)((_moo_p_eve->value - (clock - _moo_p_eve->clock)) *
-                          _moo_clock_rate) +
+                (int32_t)trunc(
+                    (_moo_p_eve->value - (clock - _moo_p_eve->clock)) *
+                    _moo_clock_rate) +
                 p_vi->env_release;
             int32_t max_life_count2;
             int32_t c = _moo_p_eve->clock + _moo_p_eve->value +
@@ -150,10 +150,10 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
             }
             if (!next)
               max_life_count2 =
-                  _moo_smp_end - (int32_t)(clock * _moo_clock_rate);
+                  _moo_smp_end - (int32_t)trunc(clock * _moo_clock_rate);
             else
               max_life_count2 =
-                  (int32_t)((next->clock - clock) * _moo_clock_rate);
+                  (int32_t)trunc((next->clock - clock) * _moo_clock_rate);
             if (max_life_count1 < max_life_count2)
               p_tone->life_count = max_life_count1;
             else
@@ -161,9 +161,9 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
           }
           // no-release..
           else {
-            p_tone->life_count =
-                (int32_t)((_moo_p_eve->value - (clock - _moo_p_eve->clock)) *
-                          _moo_clock_rate);
+            p_tone->life_count = (int32_t)trunc(
+                (_moo_p_eve->value - (clock - _moo_p_eve->clock)) *
+                _moo_clock_rate);
           }
 
           if (p_tone->life_count > 0) {
@@ -195,7 +195,8 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
         p_u->Tone_Volume(_moo_p_eve->value);
         break;
       case EVENTKIND_PORTAMENT:
-        p_u->Tone_Portament((int32_t)(_moo_p_eve->value * _moo_clock_rate));
+        p_u->Tone_Portament(
+            (int32_t)trunc(_moo_p_eve->value * _moo_clock_rate));
         break;
       case EVENTKIND_BEATCLOCK:
         break;
@@ -242,7 +243,7 @@ bool pxtnService::_moo_PXTONE_SAMPLE(void* p_data) {
     if (_moo_fade_fade) work = work * (_moo_fade_count >> 8) / _moo_fade_max;
 
     // master volume
-    work = (int32_t)(work * _moo_master_vol);
+    work = (int32_t)trunc(work * _moo_master_vol);
 
     // to buffer..
     if (work > _moo_top) work = _moo_top;
@@ -305,13 +306,13 @@ bool pxtnService::moo_is_end_vomit() const {
 
 int32_t pxtnService::moo_get_now_clock() const {
   if (!_moo_b_init) return 0;
-  if (_moo_clock_rate) return (int32_t)(_moo_smp_count / _moo_clock_rate);
+  if (_moo_clock_rate) return (int32_t)trunc(_moo_smp_count / _moo_clock_rate);
   return 0;
 }
 
 int32_t pxtnService::moo_get_end_clock() const {
   if (!_moo_b_init) return 0;
-  if (_moo_clock_rate) return (int32_t)(_moo_smp_end / _moo_clock_rate);
+  if (_moo_clock_rate) return (int32_t)trunc(_moo_smp_end / _moo_clock_rate);
   return 0;
 }
 
@@ -328,7 +329,7 @@ bool pxtnService::moo_set_loop(bool b) {
 
 bool pxtnService::moo_set_fade(int32_t fade, float sec) {
   if (!_moo_b_init) return false;
-  _moo_fade_max = (int32_t)((float)_dst_sps * sec) >> 8;
+  _moo_fade_max = (int32_t)trunc((float)_dst_sps * sec) >> 8;
   if (fade < 0) {
     _moo_fade_fade = -1;
     _moo_fade_count = _moo_fade_max << 8;
@@ -396,18 +397,19 @@ bool pxtnService::moo_preparation(const pxtnVOMITPREPARATION* p_prep) {
 
   _moo_time_pan_index = 0;
 
-  _moo_smp_end = (int32_t)((double)meas_end * (double)_moo_bt_num *
-                           (double)_moo_bt_clock * _moo_clock_rate);
-  _moo_smp_repeat = (int32_t)((double)meas_repeat * (double)_moo_bt_num *
-                              (double)_moo_bt_clock * _moo_clock_rate);
+  _moo_smp_end = (int32_t)trunc((double)meas_end * (double)_moo_bt_num *
+                                (double)_moo_bt_clock * _moo_clock_rate);
+  _moo_smp_repeat = (int32_t)trunc((double)meas_repeat * (double)_moo_bt_num *
+                                   (double)_moo_bt_clock * _moo_clock_rate);
 
   if (start_float) {
-    _moo_smp_start = (int32_t)((float)moo_get_total_sample() * start_float);
+    _moo_smp_start =
+        (int32_t)trunc((float)moo_get_total_sample() * start_float);
   } else if (start_sample) {
     _moo_smp_start = start_sample;
   } else {
-    _moo_smp_start = (int32_t)((double)start_meas * (double)_moo_bt_num *
-                               (double)_moo_bt_clock * _moo_clock_rate);
+    _moo_smp_start = (int32_t)trunc((double)start_meas * (double)_moo_bt_num *
+                                    (double)_moo_bt_clock * _moo_clock_rate);
   }
 
   _moo_smp_count = _moo_smp_start;
