@@ -625,7 +625,7 @@ bool pxtnService::clear() {
 
   for (int32_t i = 0; i < _delay_num; i++) SAFE_DELETE(_delays[i]);
   _delay_num = 0;
-  for (int32_t i = 0; i < _delay_num; i++) SAFE_DELETE(_ovdrvs[i]);
+  for (int32_t i = 0; i < _ovdrv_num; i++) SAFE_DELETE(_ovdrvs[i]);
   _ovdrv_num = 0;
   for (int32_t i = 0; i < _woice_num; i++) SAFE_DELETE(_woices[i]);
   _woice_num = 0;
