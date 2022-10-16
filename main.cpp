@@ -360,7 +360,7 @@ void convert(std::filesystem::path file) {
     //               sizeof(double));
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-    short *buf = static_cast<short *>(malloc(static_cast<size_t>(renderSize)));
+    int16_t *buf = static_cast<int16_t *>(malloc(static_cast<size_t>(renderSize)));
 
     //    char *buf =
     //        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
