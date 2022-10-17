@@ -198,7 +198,7 @@ pxtnERR pxtnMaster::io_r_x4x( void* desc )
 
 	absolute = 0;
 
-	for( e = 0; e < (int32_t)mast.event_num; e++ )
+    for( e = 0; e < (int32_t)(mast.event_num); e++ )
 	{
 		if( !_data_r_v( desc, &status ) ) break;
 		if( !_data_r_v( desc, &clock  ) ) break;
@@ -247,7 +247,7 @@ int32_t pxtnMaster::io_r_x4x_EventNum( void* desc )
 
 	if( mast.data_num != 3 ) return 0;
 
-	for( e = 0; e < (int32_t)mast.event_num; e++ )
+    for( e = 0; e < (int32_t)(mast.event_num); e++ )
 	{
 		if( !_data_r_v( desc, &work ) ) return 0;
 		if( !_data_r_v( desc, &work ) ) return 0;

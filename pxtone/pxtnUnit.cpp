@@ -198,8 +198,8 @@ void pxtnUnit::Tone_Sample( bool b_mute_by_unit, int32_t ch_num, int32_t  time_p
 			int32_t  work = 0;
 
 			if( p_vt->life_count > 0 )
-			{
-				int32_t pos = (int32_t)p_vt->smp_pos * 4 + ch * 2;
+            {
+                int32_t pos = (int32_t)trunc(p_vt->smp_pos) * 4 + ch * 2;
 				work += *( (short*)&p_vi->p_smp_w[ pos ] );
 
 				if( ch_num == 1 )
@@ -240,7 +240,7 @@ int  pxtnUnit::Tone_Increment_Key()
 		if( _portament_sample_pos < _portament_sample_num )
 		{
 			_portament_sample_pos++;
-			_key_now = (int32_t)( _key_start + (double)_key_margin * _portament_sample_pos / _portament_sample_num );
+            _key_now = (int32_t)trunc( _key_start + (double)_key_margin * _portament_sample_pos / _portament_sample_num );
 		}
 		else
 		{

@@ -287,8 +287,8 @@ bool pxtnPulse_PCM::_Convert_ChannelNum( int32_t new_ch )
 		case  8:
 			b = 0;
 			for( a = 0; a < sample_size; a+= 2 )
-			{
-				temp1       = (int32_t)_p_smp[a] + (int32_t)_p_smp[a+1];
+            {
+                temp1       = (int32_t)(_p_smp[a] )+ (int32_t)(_p_smp[a+1]);
 				p_work[b  ] = (uint8_t)( temp1 / 2 );
 				b++;
 			}
@@ -409,9 +409,9 @@ bool pxtnPulse_PCM::_Convert_SamplePerSecond( int32_t new_sps )
 	body_size = _smp_body * _ch * _bps / 8;
 	tail_size = _smp_tail * _ch * _bps / 8;
 
-	head_size = (int32_t)( ( (double)head_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
-	body_size = (int32_t)( ( (double)body_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
-	tail_size = (int32_t)( ( (double)tail_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
+    head_size = (int32_t)trunc( ( (double)head_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
+    body_size = (int32_t)trunc( ( (double)body_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
+    tail_size = (int32_t)trunc( ( (double)tail_size * (double)new_sps + (double)(_sps) - 1 ) / _sps );
 
 	work_size = head_size + body_size + tail_size;
 
@@ -427,7 +427,7 @@ bool pxtnPulse_PCM::_Convert_SamplePerSecond( int32_t new_sps )
 		if( !pxtnMem_zero_alloc( (void **)&p4byte_work, work_size ) ) goto End;
 		for( a = 0; a < sample_num; a++ )
 		{
-			b = (int32_t)( (double)a * (double)(_sps) / (double)new_sps );
+            b = (int32_t)trunc( (double)a * (double)(_sps) / (double)new_sps );
 			p4byte_work[a] = p4byte_data[b];
 		}
 	}
@@ -443,7 +443,7 @@ bool pxtnPulse_PCM::_Convert_SamplePerSecond( int32_t new_sps )
 		if( !pxtnMem_zero_alloc( (void **)&p1byte_work, work_size ) ) goto End;
 		for( a = 0; a < sample_num; a++ )
 		{
-			b = (int32_t)( (double)a * (double)(_sps) / (double)(new_sps) );
+            b = (int32_t)trunc( (double)a * (double)(_sps) / (double)(new_sps) );
 			p1byte_work[a] = p1byte_data[b];
 		}
 	}
@@ -459,7 +459,7 @@ bool pxtnPulse_PCM::_Convert_SamplePerSecond( int32_t new_sps )
 		if( !pxtnMem_zero_alloc( (void**)&p2byte_work, work_size ) ) goto End;
 		for( a = 0; a < sample_num; a++ )
 		{
-			b = (int32_t)( (double)a * (double)(_sps) / (double)new_sps );
+            b = (int32_t)trunc( (double)a * (double)(_sps) / (double)new_sps );
 			p2byte_work[a] = p2byte_data[b];
 		}
 	}

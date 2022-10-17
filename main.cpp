@@ -4,14 +4,15 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "pxtnService.h"
 #include "sndfile.h"
 
 #pragma pack(1)
-#define SAMPLE_RATE 48000
+// #define SAMPLE_RATE 48000
+#define SAMPLE_RATE 44100
 #define CHANNEL_COUNT 2
 
 #ifdef _WIN32
@@ -359,7 +360,7 @@ void convert(std::filesystem::path file) {
     //               sizeof(double));
     sf_command(pcmFile, SFC_UPDATE_HEADER_NOW, nullptr, 0);
 
-    short *buf = static_cast<short *>(malloc(static_cast<size_t>(renderSize)));
+    int16_t *buf = static_cast<int16_t *>(malloc(static_cast<size_t>(renderSize)));
 
     //    char *buf =
     //        static_cast<char *>(malloc(static_cast<size_t>(renderSize + 1)));
@@ -452,7 +453,8 @@ int main(int argc, char *argv[]) {
 }
 
 /* TODO:
- *  - Figure out why different WAVs are produced on different platforms/compilers
+ *  - Figure out why different WAVs are produced on different
+ *platforms/compilers
  *  - Figure out why sometimes loop points are messed up
  *  - Compression level
  *  - Metadata
