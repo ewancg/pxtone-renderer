@@ -27,8 +27,6 @@ Options:
 
 No C++ bindings required for any of the libraries.
 
-For convenience, all of the libraries are available as git submodules in the `extern` directory.
-
 ## Building
 CMake must be able to find all the libraries within its search paths.
 After the prerequisites are met, the following should be fine:
