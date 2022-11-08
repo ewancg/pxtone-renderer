@@ -60,7 +60,7 @@ jobs:
 
       - name: Setup Toolchain [Windows MSVC]
         if: ${{ matrix.config.compiler == 'msvc' }}
-        uses: seanmiddleditch/gha-setup-vsdevenv@v4
+        uses: vadz/gha-setup-vsdevenv@avoid-deprecation-warnings # https://github.com/seanmiddleditch/gha-setup-vsdevenv/pull/15
 
       - name: Setup Toolchain [Windows MinGW]
         if: ${{ matrix.config.compiler == 'mingw' }}
