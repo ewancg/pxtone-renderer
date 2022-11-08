@@ -251,11 +251,11 @@ bool parseArguments(const std::vector<std::string> &args) {
 static bool ioRead(void *source, void *destination, int size, int num) {
   auto f = static_cast<FILE *>(source);
   int i = fread(destination, size, num, f);
+  if (i < num) return false;
   if (_is_big_endian()) {
     pxtnData::_correct_endian(static_cast<unsigned char *>(destination), size,
                               num);
   }
-  if (i < num) return false;
   return true;
 }
 
