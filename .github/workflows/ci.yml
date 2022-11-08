@@ -46,7 +46,7 @@ jobs:
 
           echo "Amount of cores we can build with: ${amount}"
 
-          echo "::set-output name=amount::${amount}"
+          echo "amount=${amount}" >> $GITHUB_OUTPUT
 
       - name: Set artifact identifier
         id: artifact-id
@@ -56,11 +56,11 @@ jobs:
 
           echo "Artifact identifier: ${artifact_id}"
 
-          echo "::set-output name=id::${artifact_id}"
+          echo "id=${artifact_id}" >> $GITHUB_OUTPUT
 
       - name: Setup Toolchain [Windows MSVC]
         if: ${{ matrix.config.compiler == 'msvc' }}
-        uses: seanmiddleditch/gha-setup-vsdevenv@v4
+        uses: vadz/gha-setup-vsdevenv@avoid-deprecation-warnings # https://github.com/seanmiddleditch/gha-setup-vsdevenv/pull/15
 
       - name: Setup Toolchain [Windows MinGW]
         if: ${{ matrix.config.compiler == 'mingw' }}
